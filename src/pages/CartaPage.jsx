@@ -12,7 +12,6 @@ export default function CartaPage() {
   const { addToast, openModal, closeModal, modals } = useUIStore()
   const [activeCategory, setActiveCategory] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
-  const [editingProducto, setEditingProducto] = useState(null)
 
   // Filter productos
   const filteredProductos = useMemo(() => {
@@ -30,30 +29,28 @@ export default function CartaPage() {
     return result
   }, [productos, activeCategory, searchQuery])
 
-  const handleSave = async (data) => {
+  const handleSave = async (producto, data) => {
     try {
-      if (editingProducto) {
-        await updateProducto(editingProducto.id, data)
+      if (producto) {
+        await updateProducto(producto.id, data)
         addToast('Producto actualizado', 'success')
       } else {
         await addProducto(data)
         addToast('Producto creado', 'success')
       }
       closeModal()
-      setEditingProducto(null)
     } catch (error) {
       addToast('Error al guardar el producto', 'error')
     }
   }
 
   const handleEdit = (producto) => {
-    setEditingProducto(producto)
     openModal({
       title: 'Editar Producto',
       content: (
         <ProductoForm
           producto={producto}
-          onSave={handleSave}
+          onSave={(data) => handleSave(producto, data)}
           onCancel={closeModal}
         />
       )
@@ -61,12 +58,11 @@ export default function CartaPage() {
   }
 
   const handleNew = () => {
-    setEditingProducto(null)
     openModal({
       title: 'Nuevo Producto',
       content: (
         <ProductoForm
-          onSave={handleSave}
+          onSave={(data) => handleSave(null, data)}
           onCancel={closeModal}
         />
       )

@@ -23,9 +23,9 @@ describe('CartaPage Integration', () => {
   const mockCloseModal = vi.fn()
 
   const mockProductos = [
-    { id: 1, nombre: 'Ensalada Mixta', precio: 8.5, categoria: 'primero', emoji: '🥗', activo: true },
-    { id: 2, nombre: 'Merluza', precio: 14, categoria: 'segundo', emoji: '🐟', activo: true },
-    { id: 3, nombre: 'Café Solo', precio: 1.5, categoria: 'cafeteria', emoji: '☕', activo: false }
+    { id: 1, nombre: 'Ensalada Mixta', precio: 8.5, categoria: 'entrantes', emoji: '🥗', activo: true },
+    { id: 2, nombre: 'Paella Valenciana', precio: 14, categoria: 'con_arroz', emoji: '🥘', activo: true },
+    { id: 3, nombre: 'Café Solo', precio: 1.5, categoria: 'bebidas', emoji: '☕', activo: false }
   ]
 
   beforeEach(() => {
@@ -58,7 +58,7 @@ describe('CartaPage Integration', () => {
 
     expect(screen.getByText('La Carta')).toBeInTheDocument()
     expect(screen.getByText('Ensalada Mixta')).toBeInTheDocument()
-    expect(screen.getByText('Merluza')).toBeInTheDocument()
+    expect(screen.getByText('Paella Valenciana')).toBeInTheDocument()
   })
 
   it('does not show inactive productos', () => {
@@ -91,13 +91,13 @@ describe('CartaPage Integration', () => {
   it('filters productos by category', () => {
     render(<CartaPage />)
 
-    // Use getAllByText since "Segundos" appears in both chip and badge
-    const chipBtns = screen.getAllByText('Segundos')
+    // Use getAllByText since "Con Arroz" appears in chip
+    const chipBtns = screen.getAllByText('Con Arroz')
     // The chip button is the one with btn class
     const chip = chipBtns.find((el) => el.tagName === 'BUTTON')
     fireEvent.click(chip)
 
-    expect(screen.getByText('Merluza')).toBeInTheDocument()
+    expect(screen.getByText('Paella Valenciana')).toBeInTheDocument()
     expect(screen.queryByText('Ensalada Mixta')).not.toBeInTheDocument()
   })
 

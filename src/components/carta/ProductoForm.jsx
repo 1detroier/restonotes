@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useProductoForm } from '../../hooks/useProductoForm'
-import { CATEGORIAS, CATEGORIA_LABELS } from '../../utils/constants'
+import { CATEGORIAS_CARTA, CATEGORIA_LABELS } from '../../utils/constants'
 import EmojiPicker from './EmojiPicker'
 
 export default function ProductoForm({ producto, onSave, onCancel }) {
@@ -97,7 +97,7 @@ export default function ProductoForm({ producto, onSave, onCancel }) {
           }`}
         >
           <option value="">Seleccionar...</option>
-          {CATEGORIAS.map((cat) => (
+          {CATEGORIAS_CARTA.map((cat) => (
             <option key={cat} value={cat}>
               {CATEGORIA_LABELS[cat]}
             </option>

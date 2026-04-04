@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import MesaDrawer from '../../../src/components/mesa/MesaDrawer'
 import { useAppStore } from '../../../src/store/useAppStore'
@@ -25,11 +25,11 @@ describe('MesaDrawer', () => {
   }
 
   const mockProductos = [
-    { id: 1, nombre: 'Café', precio: 1.5, categoria: 'bebida', emoji: '☕', activo: true },
-    { id: 2, nombre: 'Ensalada', precio: 8, categoria: 'primero', emoji: '🥗', activo: true },
-    { id: 3, nombre: 'Merluza', precio: 14, categoria: 'segundo', emoji: '🐟', activo: true },
-    { id: 4, nombre: 'Tarta', precio: 6, categoria: 'postre', emoji: '🍰', activo: true },
-    { id: 5, nombre: 'Agua', precio: 2, categoria: 'cafeteria', emoji: '💧', activo: true }
+    { id: 1, nombre: 'Café', precio: 1.5, categoria: 'bebidas', emoji: '☕', activo: true },
+    { id: 2, nombre: 'Ensalada', precio: 8, categoria: 'entrantes', emoji: '🥗', activo: true },
+    { id: 3, nombre: 'Merluza', precio: 14, categoria: 'sin_arroz', emoji: '🐟', activo: true },
+    { id: 4, nombre: 'Tarta', precio: 6, categoria: 'con_arroz', emoji: '🍰', activo: true },
+    { id: 5, nombre: 'Agua', precio: 2, categoria: 'bebidas', emoji: '💧', activo: true }
   ]
 
   beforeEach(() => {
@@ -39,6 +39,7 @@ describe('MesaDrawer', () => {
       menuDelDia: null,
       addItemToMesa: vi.fn(),
       removeItemFromMesa: vi.fn(),
+      updateItemQuantity: vi.fn(),
       closeCuenta: vi.fn()
     })
   })
@@ -57,12 +58,13 @@ describe('MesaDrawer', () => {
 
   it('filters products by Carta tab (excludes bebidas)', () => {
     render(<MesaDrawer mesaId={1} />)
-    // Carta tab shows non-bebida items
+    // Carta tab shows non-bebidas items
     expect(screen.getByText('Ensalada')).toBeInTheDocument()
     expect(screen.getByText('Merluza')).toBeInTheDocument()
     expect(screen.getByText('Tarta')).toBeInTheDocument()
     // Bebidas should NOT be in Carta tab
     expect(screen.queryByText('Café')).not.toBeInTheDocument()
+    expect(screen.queryByText('Agua')).not.toBeInTheDocument()
   })
 
   it('filters products by Bebidas tab', () => {
@@ -71,11 +73,13 @@ describe('MesaDrawer', () => {
     fireEvent.click(screen.getByText('Bebidas'))
     expect(screen.getByText('Café')).toBeInTheDocument()
     expect(screen.getByText('Agua')).toBeInTheDocument()
+    // Carta items should NOT be in Bebidas tab
+    expect(screen.queryByText('Ensalada')).not.toBeInTheDocument()
   })
 
   it('shows product cards with emoji, name, and price', () => {
     render(<MesaDrawer mesaId={1} />)
-    // Carta tab shows non-bebida items
+    // Carta tab shows non-bebidas items
     expect(screen.getByText('🥗')).toBeInTheDocument()
     expect(screen.getByText('8.00€')).toBeInTheDocument()
   })

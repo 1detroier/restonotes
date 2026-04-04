@@ -1,8 +1,14 @@
 /** Number of fixed tables in the restaurant */
 export const MESA_COUNT = 14
 
-/** Valid product categories */
-export const CATEGORIAS = ['primero', 'segundo', 'postre', 'bebida', 'cafeteria']
+/** Valid product categories for the carta (menu card) */
+export const CATEGORIAS_CARTA = ['con_arroz', 'sin_arroz', 'sopas', 'entrantes', 'bebidas']
+
+/** Valid selection categories for the menú del día (fixed-price daily menu) */
+export const CATEGORIAS_MENU = ['primero', 'segundo', 'postre']
+
+/** All product categories combined (for DB queries) */
+export const CATEGORIAS = [...CATEGORIAS_CARTA, ...CATEGORIAS_MENU]
 
 /** Table states */
 export const ESTADOS_MESA = {
@@ -28,11 +34,16 @@ export const EMOJI_GRID = [
 
 /** Human-readable category labels */
 export const CATEGORIA_LABELS = {
+  // Carta categories
+  con_arroz: 'Con Arroz',
+  sin_arroz: 'Sin Arroz',
+  sopas: 'Sopas / Caldos',
+  entrantes: 'Entrantes',
+  bebidas: 'Bebidas',
+  // Menú del día categories
   primero: 'Primeros',
   segundo: 'Segundos',
-  postre: 'Postres',
-  bebida: 'Bebidas',
-  cafeteria: 'Cafetería'
+  postre: 'Postres'
 }
 
 /** Timer color threshold in minutes (orange below, red at/above) */

@@ -8,8 +8,8 @@ describe('CerrarCuentaModal', () => {
     numero: 5,
     estado: 'ocupada',
     pedidos: [
-      { id: 'a', nombre: 'Café', precio: 1.5, cantidad: 2, categoria: 'bebida' },
-      { id: 'b', nombre: 'Ensalada', precio: 8, cantidad: 1, categoria: 'primero' }
+      { id: 'a', nombre: 'Café', precio: 1.5, cantidad: 2, categoria: 'bebidas' },
+      { id: 'b', nombre: 'Ensalada', precio: 8, cantidad: 1, categoria: 'entrantes' }
     ],
     total: 11,
     openedAt: new Date().toISOString()
@@ -84,6 +84,6 @@ describe('CerrarCuentaModal', () => {
       />
     )
     expect(screen.getByText('Bebidas')).toBeInTheDocument()
-    expect(screen.getByText('Primeros')).toBeInTheDocument()
+    expect(screen.getByText('Entrantes')).toBeInTheDocument()
   })
 })

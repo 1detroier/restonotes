@@ -1,4 +1,4 @@
-import { CATEGORIAS, CATEGORIA_LABELS } from '../../utils/constants'
+import { CATEGORIAS_CARTA, CATEGORIA_LABELS } from '../../utils/constants'
 
 export default function FilterChips({ activeCategory, onCategoryChange }) {
   return (
@@ -11,7 +11,7 @@ export default function FilterChips({ activeCategory, onCategoryChange }) {
       >
         Todos
       </button>
-      {CATEGORIAS.map((cat) => (
+      {CATEGORIAS_CARTA.map((cat) => (
         <button
           key={cat}
           onClick={() => onCategoryChange(cat)}

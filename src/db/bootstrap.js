@@ -1,7 +1,7 @@
 import { db } from './schema'
 import { mesaRepo } from './repositories/mesas'
 import { productoRepo } from './repositories/productos'
-import { MESA_COUNT, CATEGORIAS, ESTADOS_MESA } from '../utils/constants'
+import { MESA_COUNT, CATEGORIAS_CARTA, ESTADOS_MESA } from '../utils/constants'
 
 /**
  * Creates 14 mesas (id 1-14, estado 'libre') if mesas table is empty.
@@ -43,16 +43,23 @@ export async function seedProductos() {
   if (count === 0) {
     const now = new Date()
     const productos = [
-      { nombre: 'Ensalada Mixta', precio: 6.50, categoria: 'primero', emoji: '🥗', activo: true, createdAt: now, updatedAt: now },
-      { nombre: 'Lentejas Estofadas', precio: 7.00, categoria: 'primero', emoji: '🍲', activo: true, createdAt: now, updatedAt: now },
-      { nombre: 'Salmón a la Plancha', precio: 12.00, categoria: 'segundo', emoji: '🐟', activo: true, createdAt: now, updatedAt: now },
-      { nombre: 'Pollo Asado', precio: 9.50, categoria: 'segundo', emoji: '🍗', activo: true, createdAt: now, updatedAt: now },
-      { nombre: 'Tarta de Queso', precio: 4.50, categoria: 'postre', emoji: '🍰', activo: true, createdAt: now, updatedAt: now },
-      { nombre: 'Helado Artesanal', precio: 3.50, categoria: 'postre', emoji: '🍦', activo: true, createdAt: now, updatedAt: now },
-      { nombre: 'Café con Leche', precio: 1.50, categoria: 'cafeteria', emoji: '☕', activo: true, createdAt: now, updatedAt: now },
-      { nombre: 'Agua Mineral', precio: 1.20, categoria: 'bebida', emoji: '💧', activo: true, createdAt: now, updatedAt: now },
-      { nombre: 'Cerveza Caña', precio: 2.00, categoria: 'bebida', emoji: '🍺', activo: true, createdAt: now, updatedAt: now },
-      { nombre: 'Vino Tinto Copa', precio: 2.50, categoria: 'bebida', emoji: '🍷', activo: true, createdAt: now, updatedAt: now }
+      // Con Arroz
+      { nombre: 'Arroz a la Cubana', precio: 8.50, categoria: 'con_arroz', emoji: '🍚', activo: true, createdAt: now, updatedAt: now },
+      { nombre: 'Paella Valenciana', precio: 12.00, categoria: 'con_arroz', emoji: '🥘', activo: true, createdAt: now, updatedAt: now },
+      // Sin Arroz
+      { nombre: 'Salmón a la Plancha', precio: 12.00, categoria: 'sin_arroz', emoji: '🐟', activo: true, createdAt: now, updatedAt: now },
+      { nombre: 'Pollo Asado', precio: 9.50, categoria: 'sin_arroz', emoji: '🍗', activo: true, createdAt: now, updatedAt: now },
+      // Sopas / Caldos
+      { nombre: 'Sopa de Ajo', precio: 5.50, categoria: 'sopas', emoji: '🍲', activo: true, createdAt: now, updatedAt: now },
+      { nombre: 'Caldo Gallego', precio: 6.00, categoria: 'sopas', emoji: '🥣', activo: true, createdAt: now, updatedAt: now },
+      // Entrantes
+      { nombre: 'Ensalada Mixta', precio: 6.50, categoria: 'entrantes', emoji: '🥗', activo: true, createdAt: now, updatedAt: now },
+      { nombre: 'Tortilla Española', precio: 7.00, categoria: 'entrantes', emoji: '🍳', activo: true, createdAt: now, updatedAt: now },
+      // Bebidas
+      { nombre: 'Agua Mineral', precio: 1.20, categoria: 'bebidas', emoji: '💧', activo: true, createdAt: now, updatedAt: now },
+      { nombre: 'Cerveza Caña', precio: 2.00, categoria: 'bebidas', emoji: '🍺', activo: true, createdAt: now, updatedAt: now },
+      { nombre: 'Vino Tinto Copa', precio: 2.50, categoria: 'bebidas', emoji: '🍷', activo: true, createdAt: now, updatedAt: now },
+      { nombre: 'Café con Leche', precio: 1.50, categoria: 'bebidas', emoji: '☕', activo: true, createdAt: now, updatedAt: now }
     ]
 
     await db.productos.bulkAdd(productos)

@@ -7,7 +7,7 @@ describe('ProductoCard', () => {
     id: 1,
     nombre: 'Ensalada Mixta',
     precio: 8.5,
-    categoria: 'primero',
+    categoria: 'entrantes',
     emoji: '🥗',
     activo: true
   }
@@ -24,7 +24,7 @@ describe('ProductoCard', () => {
 
     expect(screen.getByText('Ensalada Mixta')).toBeInTheDocument()
     expect(screen.getByText('$8.50')).toBeInTheDocument()
-    expect(screen.getByText('Primeros')).toBeInTheDocument()
+    expect(screen.getByText('Entrantes')).toBeInTheDocument()
   })
 
   it('shows reduced opacity for inactive producto', () => {

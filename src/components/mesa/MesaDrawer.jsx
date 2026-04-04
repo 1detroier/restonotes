@@ -15,7 +15,7 @@ import { formatPrice, formatMinutes } from '../../utils/formatters'
  * @param {number} props.mesaId - Active mesa ID
  */
 export default function MesaDrawer({ mesaId }) {
-  const { mesas, productos, menuDelDia, addItemToMesa, removeItemFromMesa, closeCuenta } = useAppStore()
+  const { mesas, productos, menuDelDia, addItemToMesa, removeItemFromMesa, updateItemQuantity, closeCuenta } = useAppStore()
   const { closeModal } = useUIStore()
   const [activeTab, setActiveTab] = useState('carta')
   const [qtyProduct, setQtyProduct] = useState(null)
@@ -32,13 +32,13 @@ export default function MesaDrawer({ mesaId }) {
   const filteredProductos = productos.filter((p) => {
     if (!p.activo) return false
     if (activeTab === 'carta') {
-      return p.categoria !== 'bebida' && p.categoria !== 'menu'
+      return p.categoria !== 'bebidas'
     }
     if (activeTab === 'menu') {
       return p.categoria === 'primero' || p.categoria === 'segundo' || p.categoria === 'postre'
     }
     if (activeTab === 'bebidas') {
-      return p.categoria === 'bebida' || p.categoria === 'cafeteria'
+      return p.categoria === 'bebidas'
     }
     return true
   })
@@ -56,6 +56,14 @@ export default function MesaDrawer({ mesaId }) {
       await removeItemFromMesa(mesaId, tempId)
     } catch (err) {
       console.error('Failed to remove item:', err)
+    }
+  }
+
+  const handleUpdateQty = async (tempId, newQty) => {
+    try {
+      await updateItemQuantity(mesaId, tempId, newQty)
+    } catch (err) {
+      console.error('Failed to update quantity:', err)
     }
   }
 
@@ -152,7 +160,7 @@ export default function MesaDrawer({ mesaId }) {
                 <h3 className="text-sm font-semibold px-4 py-2 text-base-content/70 uppercase">
                   Ticket ({pedidos.length} artículos)
                 </h3>
-                <TicketPreview pedidos={pedidos} onRemove={handleRemoveItem} />
+                <TicketPreview pedidos={pedidos} onRemove={handleRemoveItem} onUpdateQty={handleUpdateQty} />
               </div>
             )}
           </div>

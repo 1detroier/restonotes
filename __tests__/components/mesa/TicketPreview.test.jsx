@@ -4,9 +4,9 @@ import TicketPreview from '../../../src/components/mesa/TicketPreview'
 
 describe('TicketPreview', () => {
   const pedidos = [
-    { id: 'a', nombre: 'Café', precio: 1.5, cantidad: 2, categoria: 'bebida', emoji: '☕' },
-    { id: 'b', nombre: 'Ensalada', precio: 8, cantidad: 1, categoria: 'primero', emoji: '🥗' },
-    { id: 'c', nombre: 'Agua', precio: 2, cantidad: 1, categoria: 'bebida', emoji: '💧' }
+    { id: 'a', nombre: 'Café', precio: 1.5, cantidad: 2, categoria: 'bebidas', emoji: '☕' },
+    { id: 'b', nombre: 'Ensalada', precio: 8, cantidad: 1, categoria: 'entrantes', emoji: '🥗' },
+    { id: 'c', nombre: 'Agua', precio: 2, cantidad: 1, categoria: 'bebidas', emoji: '💧' }
   ]
 
   it('shows empty state when no pedidos', () => {
@@ -17,7 +17,7 @@ describe('TicketPreview', () => {
   it('groups items by category', () => {
     render(<TicketPreview pedidos={pedidos} />)
     expect(screen.getByText('Bebidas')).toBeInTheDocument()
-    expect(screen.getByText('Primeros')).toBeInTheDocument()
+    expect(screen.getByText('Entrantes')).toBeInTheDocument()
   })
 
   it('shows correct subtotals per category', () => {

@@ -9,8 +9,9 @@ import { CATEGORIA_LABELS } from '../../utils/constants'
  * @param {Object} props
  * @param {Array} props.pedidos - Array of PedidoItem objects
  * @param {Function} props.onRemove - Remove handler (tempId) => void
+ * @param {Function} props.onUpdateQty - Update quantity handler (tempId, newQty) => void
  */
-export default function TicketPreview({ pedidos, onRemove }) {
+export default function TicketPreview({ pedidos, onRemove, onUpdateQty }) {
   if (!pedidos || pedidos.length === 0) {
     return (
       <div className="flex items-center justify-center h-32 p-4">
@@ -35,6 +36,7 @@ export default function TicketPreview({ pedidos, onRemove }) {
                 key={item.id}
                 item={item}
                 onRemove={() => onRemove?.(item.id)}
+                onUpdateQty={onUpdateQty}
               />
             ))}
           </div>
@@ -55,9 +57,9 @@ export default function TicketPreview({ pedidos, onRemove }) {
 }
 
 /**
- * Individual ticket item with swipe-to-delete.
+ * Individual ticket item with swipe-to-delete and +/- quantity controls.
  */
-function SwipeableItem({ item, onRemove }) {
+function SwipeableItem({ item, onRemove, onUpdateQty }) {
   const swipe = useSwipe(onRemove)
 
   return (
@@ -76,13 +78,38 @@ function SwipeableItem({ item, onRemove }) {
         onTouchEnd={swipe.onTouchEnd}
       >
         <div className="flex items-center gap-2">
-          <span className="text-sm font-bold text-primary">{item.cantidad}×</span>
           <span className="text-sm">{item.emoji || ''} {item.nombre}</span>
           {item.nota && (
             <span className="text-xs text-base-content/50 italic">({item.nota})</span>
           )}
         </div>
-        <span className="text-sm font-medium">{formatPrice(item.precio * item.cantidad)}</span>
+        <div className="flex items-center gap-1">
+          {/* Quantity controls */}
+          <button
+            className="btn btn-xs btn-ghost min-h-[32px] min-w-[32px] p-1"
+            onClick={() => {
+              if (item.cantidad <= 1) {
+                onRemove?.(item.id)
+              } else {
+                onUpdateQty?.(item.id, item.cantidad - 1)
+              }
+            }}
+            aria-label="Reducir cantidad"
+          >
+            −
+          </button>
+          <span className="text-sm font-bold text-primary w-6 text-center">
+            {item.cantidad}
+          </span>
+          <button
+            className="btn btn-xs btn-ghost min-h-[32px] min-w-[32px] p-1"
+            onClick={() => onUpdateQty?.(item.id, item.cantidad + 1)}
+            aria-label="Aumentar cantidad"
+          >
+            +
+          </button>
+          <span className="text-sm font-medium ml-1">{formatPrice(item.precio * item.cantidad)}</span>
+        </div>
       </div>
     </div>
   )
