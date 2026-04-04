@@ -1,0 +1,116 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Prevent scroll bounce on iOS */
+html, body {
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
+  height: 100%;
+  overflow: hidden;
+}
+
+#root {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Custom CSS variables for theming */
+:root {
+  --color-primary: #ff6b35;
+  --color-secondary: #f7931e;
+  --color-dark: #2d3436;
+}
+
+/* Dark mode via prefers-color-scheme */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-primary: #ff6b35;
+    --color-secondary: #f7931e;
+    --color-dark: #1a1a2e;
+  }
+}
+
+/* Ensure touch targets are at least 44px */
+button, a, [role="button"] {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Smooth transitions for dark mode */
+* {
+  transition-property: background-color, border-color;
+  transition-duration: 150ms;
+  transition-timing-function: ease;
+}
+
+/* Bottom sheet slide-up animation */
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out;
+}
+
+/* Timer color transitions */
+.timer-orange {
+  color: #f59e0b;
+  transition: color 0.3s ease;
+}
+
+.timer-red {
+  color: #ef4444;
+  transition: color 0.3s ease;
+}
+
+/* Swipe gesture styles */
+.swipe-item {
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.swipe-delete-bg {
+  background-color: #ef4444;
+  transition: transform 0.2s ease-out;
+}
+
+/* Touch feedback for mesa cards */
+.mesa-card:active {
+  transform: scale(0.97);
+  transition: transform 0.1s ease;
+}
+
+/* Drawer content area */
+.drawer-content {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+/* Product card tap animation */
+.product-card:active {
+  transform: scale(0.95);
+  transition: transform 0.1s ease;
+}
+
+/* Tab active indicator */
+.tab-active {
+  position: relative;
+}
+
+.tab-active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background-color: currentColor;
+}
