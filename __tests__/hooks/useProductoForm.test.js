@@ -113,7 +113,10 @@ describe('useProductoForm', () => {
       result.current.setField('emoji', '🍝')
     })
 
-    const isValid = result.current.validate()
+    let isValid
+    act(() => {
+      isValid = result.current.validate()
+    })
     expect(isValid).toBe(true)
     expect(Object.keys(result.current.errors)).toHaveLength(0)
   })

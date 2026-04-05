@@ -3,11 +3,27 @@ import { render, screen, fireEvent } from '@testing-library/react'
 import TakeawayCard from '../../../src/components/takeaway/TakeawayCard'
 
 vi.mock('../../../src/store/useAppStore', () => {
+  const productos = []
+  const mesas = []
+  const menuDelDia = null
   const updateTakeaway = vi.fn()
   const payTakeaway = vi.fn()
   const deleteTakeaway = vi.fn()
+  const addTakeawayItem = vi.fn()
+  const removeTakeawayItem = vi.fn()
+  const updateTakeawayItemQty = vi.fn()
   return {
-    useAppStore: () => ({ updateTakeaway, payTakeaway, deleteTakeaway })
+    useAppStore: () => ({
+      productos,
+      mesas,
+      menuDelDia,
+      updateTakeaway,
+      payTakeaway,
+      deleteTakeaway,
+      addTakeawayItem,
+      removeTakeawayItem,
+      updateTakeawayItemQty
+    })
   }
 })
 
@@ -53,14 +69,14 @@ describe('TakeawayCard', () => {
     expect(card).toHaveClass('opacity-50')
   })
 
-  it('shows delete button for non-pagado orders', () => {
+  it('shows cancel button for non-pagado orders', () => {
     render(<TakeawayCard order={mockOrder} />)
-    expect(screen.getByLabelText('Eliminar pedido')).toBeInTheDocument()
+    expect(screen.getByText('Cancelar')).toBeInTheDocument()
   })
 
-  it('hides delete button for pagado orders', () => {
+  it('hides cancel button for pagado orders', () => {
     const order = { ...mockOrder, status: 'pagado' }
     render(<TakeawayCard order={order} />)
-    expect(screen.queryByLabelText('Eliminar pedido')).not.toBeInTheDocument()
+    expect(screen.queryByText('Cancelar')).not.toBeInTheDocument()
   })
 })

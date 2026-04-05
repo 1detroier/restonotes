@@ -17,6 +17,9 @@ const STATE_STYLES = {
  */
 export default function MesaCard({ mesa, onTap, onLongPress }) {
   const { minutes, colorState } = useMesaTimer(mesa.openedAt)
+  const openedAtLabel = mesa.openedAt
+    ? new Date(mesa.openedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    : null
 
   const longPressHandlers = useLongPress(() => {
     onLongPress?.(mesa)
@@ -60,6 +63,11 @@ export default function MesaCard({ mesa, onTap, onLongPress }) {
             {formatMinutes(minutes)}
           </span>
           <span className="text-xs font-medium">{formatPrice(mesa.total || 0)}</span>
+          {openedAtLabel && (
+            <span className="text-[11px] uppercase tracking-wide text-base-content/60">
+              Tomado {openedAtLabel}
+            </span>
+          )}
         </div>
       )}
 

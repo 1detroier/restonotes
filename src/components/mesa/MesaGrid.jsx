@@ -16,9 +16,22 @@ export default function MesaGrid({ mesas, onTap, onLongPress }) {
     )
   }
 
+  const sortedMesas = [...mesas].sort((a, b) => {
+    const aOpen = a.openedAt ? new Date(a.openedAt).getTime() : Infinity
+    const bOpen = b.openedAt ? new Date(b.openedAt).getTime() : Infinity
+    if (a.estado === b.estado) {
+      return aOpen - bOpen
+    }
+    if (a.estado === 'ocupada') return -1
+    if (b.estado === 'ocupada') return 1
+    if (a.estado === 'cuenta') return -1
+    if (b.estado === 'cuenta') return 1
+    return a.numero - b.numero
+  })
+
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 p-2">
-      {mesas.map((mesa) => (
+      {sortedMesas.map((mesa) => (
         <MesaCard
           key={mesa.id}
           mesa={mesa}

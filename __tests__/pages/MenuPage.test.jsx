@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { act } from 'react'
 import MenuPage from '../../src/pages/MenuPage'
 import { useAppStore } from '../../src/store/useAppStore'
 import { useUIStore } from '../../src/store/useUIStore'
@@ -33,6 +34,14 @@ describe('MenuPage Integration', () => {
     { id: 4, nombre: 'Tarta', precio: 6, categoria: 'con_arroz', emoji: '🍰', activo: true }
   ]
 
+  const renderMenuPage = async () => {
+    let renderResult
+    await act(async () => {
+      renderResult = render(<MenuPage />)
+    })
+    return renderResult
+  }
+
   beforeEach(() => {
     vi.clearAllMocks()
     useAppStore.mockReturnValue({
@@ -52,21 +61,21 @@ describe('MenuPage Integration', () => {
     vi.restoreAllMocks()
   })
 
-  it('renders page title', () => {
-    render(<MenuPage />)
+  it('renders page title', async () => {
+    await renderMenuPage()
 
     expect(screen.getByText('Menú del Día')).toBeInTheDocument()
   })
 
-  it('shows date picker', () => {
-    render(<MenuPage />)
+  it('shows date picker', async () => {
+    await renderMenuPage()
 
     const dateInputs = document.querySelectorAll('input[type="date"]')
     expect(dateInputs.length).toBeGreaterThan(0)
   })
 
-  it('shows product categories for selection', () => {
-    render(<MenuPage />)
+  it('shows product categories for selection', async () => {
+    await renderMenuPage()
 
     expect(screen.getByText('Asignar Platos al Menú')).toBeInTheDocument()
     expect(screen.getByText('Primeros (0)')).toBeInTheDocument()
@@ -74,8 +83,8 @@ describe('MenuPage Integration', () => {
     expect(screen.getByText('Postres (0)')).toBeInTheDocument()
   })
 
-  it('shows productos in category selection', () => {
-    render(<MenuPage />)
+  it('shows productos in category selection', async () => {
+    await renderMenuPage()
 
     // Products from carta categories are shown grouped under each menu slot
     // Ensalada appears in all 3 slots (primero, segundo, postre) since it's a carta product
@@ -83,33 +92,33 @@ describe('MenuPage Integration', () => {
     expect(screen.getAllByText('Sopa').length).toBeGreaterThan(0)
   })
 
-  it('shows preview section', () => {
-    render(<MenuPage />)
+  it('shows preview section', async () => {
+    await renderMenuPage()
 
     expect(screen.getByText('Vista Previa del Menú')).toBeInTheDocument()
   })
 
-  it('shows price input', () => {
-    render(<MenuPage />)
+  it('shows price input', async () => {
+    await renderMenuPage()
 
     const priceInputs = document.querySelectorAll('input[type="number"]')
     expect(priceInputs.length).toBeGreaterThan(0)
   })
 
-  it('shows incluye bebida toggle', () => {
-    render(<MenuPage />)
+  it('shows incluye bebida toggle', async () => {
+    await renderMenuPage()
 
     expect(screen.getByText('Incluye bebida')).toBeInTheDocument()
   })
 
-  it('shows activate menu button', () => {
-    render(<MenuPage />)
+  it('shows activate menu button', async () => {
+    await renderMenuPage()
 
     expect(screen.getByText('Activar Menú')).toBeInTheDocument()
   })
 
   it('saves menu when activate is clicked with valid data', async () => {
-    render(<MenuPage />)
+    await renderMenuPage()
 
     // Verify the page renders with all required elements
     expect(screen.getByText('Menú del Día')).toBeInTheDocument()

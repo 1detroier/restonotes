@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import MesaDrawer from '../../../src/components/mesa/MesaDrawer'
 import { useAppStore } from '../../../src/store/useAppStore'
 
@@ -8,11 +8,15 @@ vi.mock('../../../src/store/useAppStore', () => ({
   useAppStore: vi.fn()
 }))
 
+const mockCloseModal = vi.fn()
+
 vi.mock('../../../src/store/useUIStore', () => ({
   useUIStore: vi.fn(() => ({
-    closeModal: vi.fn()
+    closeModal: mockCloseModal
   }))
 }))
+
+const mockCancelMesaPedido = vi.fn()
 
 describe('MesaDrawer', () => {
   const mockMesa = {
@@ -32,7 +36,11 @@ describe('MesaDrawer', () => {
     { id: 5, nombre: 'Agua', precio: 2, categoria: 'bebidas', emoji: '💧', activo: true }
   ]
 
+  const mockLoadMesas = vi.fn()
+
   beforeEach(() => {
+    mockCloseModal.mockReset()
+    mockLoadMesas.mockReset()
     useAppStore.mockReturnValue({
       mesas: [mockMesa],
       productos: mockProductos,
@@ -40,7 +48,10 @@ describe('MesaDrawer', () => {
       addItemToMesa: vi.fn(),
       removeItemFromMesa: vi.fn(),
       updateItemQuantity: vi.fn(),
-      closeCuenta: vi.fn()
+      closeCuenta: vi.fn(),
+      cancelItem: vi.fn(),
+      cancelMesaPedido: mockCancelMesaPedido,
+      loadMesas: mockLoadMesas
     })
   })
 
@@ -82,5 +93,22 @@ describe('MesaDrawer', () => {
     // Carta tab shows non-bebidas items
     expect(screen.getByText('🥗')).toBeInTheDocument()
     expect(screen.getByText('8.00€')).toBeInTheDocument()
+  })
+
+  it('opens cancel confirmation modal when tapping cancel button', () => {
+    render(<MesaDrawer mesaId={1} />)
+    fireEvent.click(screen.getByText('✕ Cancelar Pedido'))
+    expect(screen.getByText('⚠️ Cancelar Pedido')).toBeInTheDocument()
+    expect(screen.getByText('Cancelar Pedido')).toBeInTheDocument()
+  })
+
+  it('calls mesaRepo.closeCuenta and loadMesas when confirming cancel order', async () => {
+    render(<MesaDrawer mesaId={1} />)
+    fireEvent.click(screen.getByText('✕ Cancelar Pedido'))
+    fireEvent.click(screen.getByText('Cancelar Pedido'))
+    await waitFor(() => {
+      expect(mockCancelMesaPedido).toHaveBeenCalledWith(1)
+      expect(mockCloseModal).toHaveBeenCalled()
+    })
   })
 })

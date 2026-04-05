@@ -7,7 +7,7 @@ import { exportVentasToCSV } from '../utils/csvExport'
  * Daily sales report page with date picker and CSV export.
  */
 export default function VentasPage() {
-  const { ventas, loadVentas } = useAppStore()
+  const { ventas, loadVentas, deleteVenta } = useAppStore()
   const today = new Date().toISOString().substring(0, 10)
   const [selectedDate, setSelectedDate] = useState(today)
 
@@ -17,6 +17,13 @@ export default function VentasPage() {
 
   const handleExportCSV = () => {
     exportVentasToCSV(ventas, `ventas-${selectedDate}.csv`)
+  }
+
+  const handleDeleteVenta = async (ventaId) => {
+    if (window.confirm('¿Cancelar esta venta del registro?')) {
+      await deleteVenta(ventaId)
+      await loadVentas(selectedDate)
+    }
   }
 
   return (
@@ -53,7 +60,7 @@ export default function VentasPage() {
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-4">
-        <VentasSummary ventas={ventas} fecha={selectedDate} />
+        <VentasSummary ventas={ventas} fecha={selectedDate} onDelete={handleDeleteVenta} />
       </div>
     </div>
   )

@@ -301,6 +301,16 @@ export const useAppStore = create((set, get) => ({
     }
   },
 
+  cancelMesaPedido: async (mesaId) => {
+    try {
+      await mesaRepo.closeCuenta(mesaId)
+      await get().loadMesas()
+    } catch (error) {
+      console.error('[AppStore] cancelMesaPedido failed:', error)
+      throw error
+    }
+  },
+
   // ============ Item Cancellation ============
 
   /**
@@ -363,6 +373,19 @@ export const useAppStore = create((set, get) => ({
       set({ ventas })
     } catch (error) {
       console.error('[AppStore] loadVentas failed:', error)
+    }
+  },
+
+  /**
+   * Delete a venta record (for error correction).
+   * @param {number} id - Venta ID
+   */
+  deleteVenta: async (id) => {
+    try {
+      await ventaRepo.delete(id)
+    } catch (error) {
+      console.error('[AppStore] deleteVenta failed:', error)
+      throw error
     }
   },
 
@@ -450,16 +473,20 @@ export const useAppStore = create((set, get) => ({
    * @param {string} customerName - Customer name
    * @returns {Promise<number>} Order ID
    */
-  createTakeaway: async (customerName) => {
+  createTakeaway: async (customerName, options = {}) => {
     try {
       const now = new Date().toISOString()
+      const mesaId = options.mesaId != null ? Number(options.mesaId) : null
+      const pickupAt = options.pickupAt || null
       const order = {
         customerName,
         pedidos: [],
         status: 'pendiente',
         total: 0,
         createdAt: now,
-        updatedAt: now
+        updatedAt: now,
+        mesaId,
+        pickupAt
       }
       const id = await pedidosLlevarRepo.create(order)
       await get().loadTakeaways()
@@ -586,5 +613,48 @@ export const useAppStore = create((set, get) => ({
    */
   setTakeawayActiva: (id) => {
     set({ takeawayActivaId: id })
+  },
+
+  /**
+   * Remove an item from a takeaway order.
+   */
+  removeTakeawayItem: async (takeawayId, itemId) => {
+    try {
+      const { takeaways } = get()
+      const order = takeaways.find((t) => t.id === takeawayId)
+      if (!order) throw new Error(`Takeaway order ${takeawayId} not found`)
+
+      const pedidos = (order.pedidos || []).filter((p) => p.id !== itemId)
+      const total = calcTotal(pedidos)
+      await pedidosLlevarRepo.update(takeawayId, { pedidos, total })
+      await get().loadTakeaways()
+    } catch (error) {
+      console.error('[AppStore] removeTakeawayItem failed:', error)
+      throw error
+    }
+  },
+
+  /**
+   * Update quantity of an item in a takeaway order.
+   */
+  updateTakeawayItemQty: async (takeawayId, itemId, newQty) => {
+    try {
+      const { takeaways } = get()
+      const order = takeaways.find((t) => t.id === takeawayId)
+      if (!order) throw new Error(`Takeaway order ${takeawayId} not found`)
+
+      const pedidos = (order.pedidos || []).map((p) => {
+        if (p.id === itemId) {
+          return { ...p, cantidad: newQty, subtotal: p.precio * newQty }
+        }
+        return p
+      })
+      const total = calcTotal(pedidos)
+      await pedidosLlevarRepo.update(takeawayId, { pedidos, total })
+      await get().loadTakeaways()
+    } catch (error) {
+      console.error('[AppStore] updateTakeawayItemQty failed:', error)
+      throw error
+    }
   }
 }))

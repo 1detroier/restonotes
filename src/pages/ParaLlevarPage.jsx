@@ -7,19 +7,21 @@ import TakeawayForm from '../components/takeaway/TakeawayForm'
  * Takeaway orders page — orchestrates loading and creation of pedidos para llevar.
  */
 export default function ParaLlevarPage() {
-  const { takeaways, loadTakeaways, createTakeaway } = useAppStore()
+  const { takeaways, loadTakeaways, createTakeaway, loadMesas } = useAppStore()
   const [showForm, setShowForm] = useState(false)
 
   useEffect(() => {
     loadTakeaways()
-  }, [loadTakeaways])
+    loadMesas()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const handleNewOrder = () => {
     setShowForm(true)
   }
 
-  const handleCreateOrder = async (customerName) => {
-    await createTakeaway(customerName)
+  const handleCreateOrder = async ({ customerName, mesaId, pickupAt }) => {
+    await createTakeaway(customerName, { mesaId, pickupAt })
     setShowForm(false)
   }
 

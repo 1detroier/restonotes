@@ -18,4 +18,15 @@ db.version(2).stores({
   // Existing v1 tables (productos, menuDia, mesas) are untouched
 })
 
+// v3: track mesa association and pickup time for takeaway orders
+db.version(3).stores({
+  pedidosLlevar: '++id, customerName, status, total, createdAt, pickupAt, mesaId'
+}).upgrade(async (tx) => {
+  const table = tx.table('pedidosLlevar')
+  await table.toCollection().modify((pedido) => {
+    if (pedido.pickupAt === undefined) pedido.pickupAt = null
+    if (pedido.mesaId === undefined) pedido.mesaId = null
+  })
+})
+
 export default db

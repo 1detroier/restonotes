@@ -50,6 +50,19 @@ export default function MesasPage() {
         <p className="text-xs text-base-content/60">
           {mesas.filter((m) => m.estado === 'ocupada').length} de {mesas.length} ocupadas
         </p>
+        <div className="mt-2 flex gap-2 overflow-x-auto pb-1">
+          {mesas
+            .filter((m) => m.estado === 'ocupada' && m.openedAt)
+            .sort((a, b) => new Date(a.openedAt).getTime() - new Date(b.openedAt).getTime())
+            .map((mesa) => (
+              <span
+                key={mesa.id}
+                className="badge badge-outline whitespace-nowrap"
+              >
+                #{mesa.numero} · {new Date(mesa.openedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </span>
+            ))}
+        </div>
       </div>
 
       {/* Grid */}

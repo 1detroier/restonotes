@@ -37,4 +37,17 @@ describe('TakeawayList', () => {
     expect(cards[0]).toHaveTextContent('Juan')
     expect(cards[1]).toHaveTextContent('María')
   })
+
+  it('prioritizes pickup time when available', () => {
+    const orders = [
+      { id: 1, customerName: 'Sin hora', status: 'pendiente', total: 0, createdAt: '2026-04-05T12:00:00Z' },
+      { id: 2, customerName: 'Pickup temprano', status: 'pendiente', total: 0, createdAt: '2026-04-05T08:00:00Z', pickupAt: '2026-04-05T10:00:00Z' },
+      { id: 3, customerName: 'Pickup tarde', status: 'pendiente', total: 0, createdAt: '2026-04-05T07:00:00Z', pickupAt: '2026-04-05T12:00:00Z' }
+    ]
+    const { container } = render(<TakeawayList orders={orders} />)
+    const cards = container.querySelectorAll('.card')
+    expect(cards[0]).toHaveTextContent('Pickup temprano')
+    expect(cards[1]).toHaveTextContent('Pickup tarde')
+    expect(cards[2]).toHaveTextContent('Sin hora')
+  })
 })

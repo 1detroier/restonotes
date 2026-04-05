@@ -5,8 +5,9 @@ import { formatPrice } from '../../utils/formatters'
  * @param {Object} props
  * @param {Array} props.ventas - Array of Venta objects
  * @param {string} props.fecha - Selected date (YYYY-MM-DD)
+ * @param {Function} props.onDelete - Delete handler (ventaId) => void
  */
-export default function VentasSummary({ ventas, fecha }) {
+export default function VentasSummary({ ventas, fecha, onDelete }) {
   if (!ventas || ventas.length === 0) {
     return (
       <div className="flex items-center justify-center h-40">
@@ -58,7 +59,7 @@ export default function VentasSummary({ ventas, fecha }) {
                 key={venta.id || idx}
                 className="flex justify-between items-center p-3 bg-base-200 rounded-lg min-h-[44px]"
               >
-                <div>
+                <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-medium">{hora}</span>
                     <span className="text-xs text-base-content/50">{mesaLabel}</span>
@@ -67,9 +68,17 @@ export default function VentasSummary({ ventas, fecha }) {
                     {venta.paymentMethod ? paymentLabels[venta.paymentMethod] || venta.paymentMethod : ''}
                   </p>
                 </div>
-                <span className="text-sm font-bold text-primary">
+                <span className="text-sm font-bold text-primary mr-2">
                   {formatPrice(venta.total || 0)}
                 </span>
+                {onDelete && (
+                  <button
+                    className="btn btn-xs btn-ghost btn-error min-h-[32px]"
+                    onClick={() => onDelete(venta.id)}
+                  >
+                    Cancelar venta
+                  </button>
+                )}
               </div>
             )
           })}

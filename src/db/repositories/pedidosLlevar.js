@@ -40,7 +40,17 @@ export const pedidosLlevarRepo = {
    * @returns {Promise<Array>} Orders sorted by createdAt descending
    */
   getAll: async () => {
-    return await db.pedidosLlevar.reverse().sortBy('createdAt')
+    const orders = await db.pedidosLlevar.toArray()
+    return orders.sort((a, b) => {
+      const aPickup = a.pickupAt || ''
+      const bPickup = b.pickupAt || ''
+      if (aPickup && bPickup && aPickup !== bPickup) {
+        return aPickup.localeCompare(bPickup)
+      }
+      const aCreated = a.createdAt || ''
+      const bCreated = b.createdAt || ''
+      return bCreated.localeCompare(aCreated)
+    })
   },
 
   /**

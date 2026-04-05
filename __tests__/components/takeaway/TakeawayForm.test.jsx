@@ -3,8 +3,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import TakeawayForm from '../../../src/components/takeaway/TakeawayForm'
 
 vi.mock('../../../src/store/useAppStore', () => {
-  const createTakeaway = vi.fn().mockResolvedValue(1)
-  return { useAppStore: () => ({ createTakeaway }) }
+  return { useAppStore: () => ({ mesas: [] }) }
 })
 
 describe('TakeawayForm', () => {

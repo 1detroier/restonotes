@@ -39,5 +39,13 @@ export const ventaRepo = {
   getTotalByDate: async (fecha) => {
     const ventas = await db.ventas.where('fecha').equals(fecha).toArray()
     return ventas.reduce((sum, v) => sum + (v.total || 0), 0)
+  },
+
+  /**
+   * Delete a venta record.
+   * @param {number} id - Venta ID
+   */
+  delete: async (id) => {
+    return await db.ventas.delete(id)
   }
 }

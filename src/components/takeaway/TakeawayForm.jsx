@@ -9,10 +9,13 @@ import { useAppStore } from '../../store/useAppStore'
  * @param {Function} props.onCancel - Cancel handler
  */
 export default function TakeawayForm({ onSubmit, onCancel }) {
-  const { createTakeaway } = useAppStore()
   const [name, setName] = useState('')
   const [error, setError] = useState('')
+  const [selectedMesaId, setSelectedMesaId] = useState('')
+  const [pickupTime, setPickupTime] = useState('')
   const inputRef = useRef(null)
+  const { mesas } = useAppStore()
+  const mesasOcupadas = (mesas || []).filter((m) => m.estado === 'ocupada')
 
   useEffect(() => {
     inputRef.current?.focus()
@@ -20,18 +23,25 @@ export default function TakeawayForm({ onSubmit, onCancel }) {
 
   const isValid = name.trim().length >= 2 && name.trim().length <= 50
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault()
     if (!isValid) return
 
     const trimmedName = name.trim()
-    try {
-      await createTakeaway(trimmedName)
-      onSubmit(trimmedName)
-    } catch (err) {
-      console.error('Failed to create takeaway:', err)
-      setError('Error al crear el pedido')
-    }
+    onSubmit({
+      customerName: trimmedName,
+      mesaId: selectedMesaId ? Number(selectedMesaId) : null,
+      pickupAt: pickupTime ? buildPickupISO(pickupTime) : null
+    })
+  }
+
+  const buildPickupISO = (timeValue) => {
+    const today = new Date()
+    const [hours, minutes] = timeValue.split(':').map(Number)
+    if (Number.isNaN(hours) || Number.isNaN(minutes)) return null
+    const pickupDate = new Date(today)
+    pickupDate.setHours(hours, minutes, 0, 0)
+    return pickupDate.toISOString()
   }
 
   const handleNameChange = (e) => {
@@ -83,6 +93,38 @@ export default function TakeawayForm({ onSubmit, onCancel }) {
                 Mínimo 2 caracteres
               </p>
             )}
+          </div>
+
+          <div className="mb-4">
+            <label htmlFor="mesaRelacionada" className="label">
+              <span className="label-text font-medium">Asociar a mesa (opcional)</span>
+            </label>
+            <select
+              id="mesaRelacionada"
+              className="select select-bordered w-full min-h-[44px]"
+              value={selectedMesaId}
+              onChange={(e) => setSelectedMesaId(e.target.value)}
+            >
+              <option value="">Sin asociar</option>
+              {mesasOcupadas.map((mesa) => (
+                <option key={mesa.id} value={mesa.id}>
+                  Mesa #{mesa.numero}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="mb-4">
+            <label htmlFor="pickupTime" className="label">
+              <span className="label-text font-medium">Hora de recogida (opcional)</span>
+            </label>
+            <input
+              id="pickupTime"
+              type="time"
+              value={pickupTime}
+              onChange={(e) => setPickupTime(e.target.value)}
+              className="input input-bordered w-full min-h-[44px]"
+            />
           </div>
 
           <div className="flex gap-2">

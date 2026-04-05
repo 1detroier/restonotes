@@ -17,7 +17,7 @@ import { formatPrice, formatMinutes } from '../../utils/formatters'
  * @param {number} props.mesaId - Active mesa ID
  */
 export default function MesaDrawer({ mesaId }) {
-  const { mesas, productos, menuDelDia, addItemToMesa, removeItemFromMesa, updateItemQuantity, closeCuenta, cancelItem, loadMesas } = useAppStore()
+  const { mesas, productos, menuDelDia, addItemToMesa, removeItemFromMesa, updateItemQuantity, closeCuenta, cancelItem, cancelMesaPedido, loadMesas } = useAppStore()
   const { closeModal } = useUIStore()
   const [activeTab, setActiveTab] = useState('carta')
   const [qtyProduct, setQtyProduct] = useState(null)
@@ -85,10 +85,7 @@ export default function MesaDrawer({ mesaId }) {
 
   const handleCancelOrder = async () => {
     try {
-      // Reset mesa to libre WITHOUT saving to ventas
-      const { mesaRepo } = await import('../../db/repositories/mesas')
-      await mesaRepo.closeCuenta(mesaId)
-      await loadMesas()
+      await cancelMesaPedido(mesaId)
       setShowCancelOrder(false)
       closeModal()
     } catch (err) {
@@ -238,20 +235,26 @@ export default function MesaDrawer({ mesaId }) {
           </div>
 
           {/* Action buttons */}
-          {pedidos.length > 0 && (
+          {mesa.estado === 'ocupada' && (
             <div className="sticky bottom-0 bg-base-100 border-t border-base-200 p-3 flex gap-2">
               <button
+                type="button"
                 className="btn btn-error btn-outline flex-1 min-h-[44px]"
-                onClick={() => setShowCancelOrder(true)}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setShowCancelOrder(true)
+                }}
               >
-                ✕ Cancelar
+                ✕ Cancelar Pedido
               </button>
-              <button
-                className="btn btn-primary flex-1 min-h-[44px]"
-                onClick={() => setShowCloseConfirm(true)}
-              >
-                🧾 Cobrar
-              </button>
+              {pedidos.length > 0 && (
+                <button
+                  className="btn btn-primary flex-1 min-h-[44px]"
+                  onClick={() => setShowCloseConfirm(true)}
+                >
+                  🧾 Cobrar
+                </button>
+              )}
             </div>
           )}
         </div>

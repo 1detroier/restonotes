@@ -8,10 +8,12 @@ import TakeawayCard from './TakeawayCard'
 export default function TakeawayList({ orders }) {
   if (!orders || orders.length === 0) return null
 
-  // Sort by createdAt descending (newest first)
-  const sorted = [...orders].sort((a, b) =>
-    (b.createdAt || '').localeCompare(a.createdAt || '')
-  )
+  const sorted = [...orders].sort((a, b) => {
+    const pickupA = a.pickupAt ? new Date(a.pickupAt).getTime() : Infinity
+    const pickupB = b.pickupAt ? new Date(b.pickupAt).getTime() : Infinity
+    if (pickupA !== pickupB) return pickupA - pickupB
+    return (b.createdAt || '').localeCompare(a.createdAt || '')
+  })
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
