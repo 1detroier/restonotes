@@ -57,27 +57,53 @@ export default function VentasSummary({ ventas, fecha, onDelete }) {
             return (
               <div
                 key={venta.id || idx}
-                className="flex justify-between items-center p-3 bg-base-200 rounded-lg min-h-[44px]"
+                className="p-3 bg-base-200 rounded-lg"
               >
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium">{hora}</span>
-                    <span className="text-xs text-base-content/50">{mesaLabel}</span>
+                <div className="flex justify-between items-center">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium">{hora}</span>
+                      <span className="text-xs text-base-content/50">{mesaLabel}</span>
+                    </div>
+                    <p className="text-xs text-base-content/50">
+                      {venta.paymentMethod ? paymentLabels[venta.paymentMethod] || venta.paymentMethod : ''}
+                    </p>
                   </div>
-                  <p className="text-xs text-base-content/50">
-                    {venta.paymentMethod ? paymentLabels[venta.paymentMethod] || venta.paymentMethod : ''}
-                  </p>
+                  <span className="text-sm font-bold text-primary mr-2">
+                    {formatPrice(venta.total || 0)}
+                  </span>
+                  {onDelete && (
+                    <button
+                      className="btn btn-xs btn-ghost btn-error min-h-[32px]"
+                      onClick={() => onDelete(venta.id)}
+                    >
+                      Cancelar venta
+                    </button>
+                  )}
                 </div>
-                <span className="text-sm font-bold text-primary mr-2">
-                  {formatPrice(venta.total || 0)}
-                </span>
-                {onDelete && (
-                  <button
-                    className="btn btn-xs btn-ghost btn-error min-h-[32px]"
-                    onClick={() => onDelete(venta.id)}
-                  >
-                    Cancelar venta
-                  </button>
+
+                {venta.items && venta.items.length > 0 && (
+                  <div className="mt-2 border-t border-base-300 pt-2">
+                    <ul className="text-xs text-base-content/70 space-y-1">
+                      {venta.items.map((item, itemIdx) => (
+                        <li key={item.id || itemIdx} className="flex justify-between gap-3">
+                          <div>
+                            <span className={item.status === 'cancelado' ? 'line-through opacity-60' : ''}>
+                              {item.cantidad || 1}× {item.nombre}
+                            </span>
+                            {item.nota && (
+                              <div className="text-[11px] text-base-content/50">
+                                {item.nota}
+                              </div>
+                            )}
+                          </div>
+                          <span className={`font-medium ${item.status === 'cancelado' ? 'line-through opacity-60' : ''}`}>
+                            {formatPrice((item.precio || 0) * (item.cantidad || 1))}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 )}
               </div>
             )
