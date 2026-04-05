@@ -55,11 +55,21 @@ export default function CerrarCuentaModal({ mesa, onConfirm, onCancel }) {
                 {CATEGORIA_LABELS[categoria] || categoria}
               </p>
               {items.map((item) => (
-                <div key={item.id} className="flex justify-between py-0.5">
-                  <span>
-                    {item.cantidad}× {item.nombre}
-                  </span>
-                  <span className="font-medium">{formatPrice(item.precio * item.cantidad)}</span>
+                <div key={item.id}>
+                  <div className="flex justify-between py-0.5">
+                    <span>
+                      {item.cantidad}× {item.nombre}
+                    </span>
+                    <span className="font-medium">{formatPrice(item.precio * item.cantidad)}</span>
+                  </div>
+                  {/* Show menu components */}
+                  {item.categoria === 'menu' && item.nota && (
+                    <div className="ml-4 text-xs text-base-content/50 space-y-0.5">
+                      {item.nota.split(' | ').map((comp, i) => (
+                        <p key={i}>{['1️⃣', '2️⃣', '3️⃣'][i] || '•'} {comp}</p>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

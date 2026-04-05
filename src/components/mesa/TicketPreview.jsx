@@ -61,6 +61,7 @@ export default function TicketPreview({ pedidos, onRemove, onUpdateQty }) {
  */
 function SwipeableItem({ item, onRemove, onUpdateQty }) {
   const swipe = useSwipe(onRemove)
+  const isMenu = item.categoria === 'menu'
 
   return (
     <div className="relative overflow-hidden">
@@ -71,19 +72,33 @@ function SwipeableItem({ item, onRemove, onUpdateQty }) {
 
       {/* Foreground content */}
       <div
-        className="relative flex justify-between items-center px-3 py-2 bg-base-200 transition-transform"
+        className="relative flex justify-between items-start px-3 py-2 bg-base-200 transition-transform"
         style={{ transform: `translateX(${swipe.translateX}px)` }}
         onTouchStart={swipe.onTouchStart}
         onTouchMove={swipe.onTouchMove}
         onTouchEnd={swipe.onTouchEnd}
       >
-        <div className="flex items-center gap-2">
-          <span className="text-sm">{item.emoji || ''} {item.nombre}</span>
-          {item.nota && (
-            <span className="text-xs text-base-content/50 italic">({item.nota})</span>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-bold text-primary">{item.cantidad}×</span>
+            <span className="text-sm">{item.emoji || ''} {item.nombre}</span>
+          </div>
+          {/* Menu components shown as sub-items */}
+          {isMenu && item.nota && (
+            <div className="ml-6 mt-1 space-y-0.5">
+              {item.nota.split(' | ').map((comp, i) => (
+                <p key={i} className="text-xs text-base-content/50">
+                  {['1️⃣', '2️⃣', '3️⃣'][i] || '•'} {comp}
+                </p>
+              ))}
+            </div>
+          )}
+          {/* Regular nota (non-menu) */}
+          {!isMenu && item.nota && (
+            <span className="ml-6 text-xs text-base-content/50 italic">({item.nota})</span>
           )}
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 shrink-0">
           {/* Quantity controls */}
           <button
             className="btn btn-xs btn-ghost min-h-[32px] min-w-[32px] p-1"

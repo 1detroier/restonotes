@@ -2,7 +2,7 @@
 export const MESA_COUNT = 14
 
 /** Valid product categories for the carta (menu card) */
-export const CATEGORIAS_CARTA = ['con_arroz', 'sin_arroz', 'sopas', 'entrantes', 'bebidas']
+export const CATEGORIAS_CARTA = ['con_arroz', 'sin_arroz', 'sopas', 'entrantes', 'arroz_frijoles', 'bebidas']
 
 /** Valid selection categories for the menú del día (fixed-price daily menu) */
 export const CATEGORIAS_MENU = ['primero', 'segundo', 'postre']
@@ -39,6 +39,7 @@ export const CATEGORIA_LABELS = {
   sin_arroz: 'Sin Arroz',
   sopas: 'Sopas / Caldos',
   entrantes: 'Entrantes',
+  arroz_frijoles: 'Arroz con Frijoles y Bolón',
   bebidas: 'Bebidas',
   // Menú del día categories
   primero: 'Primeros',

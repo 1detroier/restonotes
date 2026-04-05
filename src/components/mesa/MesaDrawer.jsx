@@ -6,6 +6,7 @@ import ProductQuickAdd from './ProductQuickAdd'
 import TicketPreview from './TicketPreview'
 import QuantityModal from './QuantityModal'
 import CerrarCuentaModal from './CerrarCuentaModal'
+import MenuSelectionModal from './MenuSelectionModal'
 import { formatPrice, formatMinutes } from '../../utils/formatters'
 
 /**
@@ -20,6 +21,7 @@ export default function MesaDrawer({ mesaId }) {
   const [activeTab, setActiveTab] = useState('carta')
   const [qtyProduct, setQtyProduct] = useState(null)
   const [showCloseConfirm, setShowCloseConfirm] = useState(false)
+  const [showMenuSelection, setShowMenuSelection] = useState(false)
 
   const mesa = mesas.find((m) => m.id === mesaId)
   const { minutes, colorState } = useMesaTimer(mesa?.openedAt)
@@ -33,9 +35,6 @@ export default function MesaDrawer({ mesaId }) {
     if (!p.activo) return false
     if (activeTab === 'carta') {
       return p.categoria !== 'bebidas'
-    }
-    if (activeTab === 'menu') {
-      return p.categoria === 'primero' || p.categoria === 'segundo' || p.categoria === 'postre'
     }
     if (activeTab === 'bebidas') {
       return p.categoria === 'bebidas'
@@ -79,6 +78,30 @@ export default function MesaDrawer({ mesaId }) {
       closeModal()
     } catch (err) {
       console.error('Failed to close cuenta:', err)
+    }
+  }
+
+  const handleMenuConfirm = async (primero, segundo, postre) => {
+    try {
+      const menuPrice = menuDelDia?.precio || 0
+      // Add as a single "Menú Completo" item but store components in nota
+      const menuNota = `${primero?.nombre || ''} | ${segundo?.nombre || ''} | ${postre?.nombre || ''}`
+      await addItemToMesa(mesaId, {
+        id: 'menu-dia',
+        nombre: 'Menú Completo',
+        precio: menuPrice,
+        categoria: 'menu',
+        emoji: '🍱',
+        // Store component IDs for reference
+        _menuComponents: {
+          primeroId: primero?.id,
+          segundoId: segundo?.id,
+          postreId: postre?.id
+        }
+      }, 1, 'menu', menuNota)
+      setShowMenuSelection(false)
+    } catch (err) {
+      console.error('Failed to add menu:', err)
     }
   }
 
@@ -147,12 +170,42 @@ export default function MesaDrawer({ mesaId }) {
 
           {/* Scrollable content */}
           <div className="flex-1 overflow-y-auto">
-            {/* Product grid */}
-            <ProductQuickAdd
-              productos={filteredProductos}
-              onAdd={handleAddProduct}
-              onLongPressProduct={setQtyProduct}
-            />
+            {/* Menú Hoy tab - single card */}
+            {activeTab === 'menu' ? (
+              <div className="p-4">
+                {menuDelDia && menuDelDia.activo ? (
+                  <button
+                    className="w-full card bg-primary/10 border-2 border-primary/30 hover:bg-primary/20 transition-colors min-h-[100px]"
+                    onClick={() => setShowMenuSelection(true)}
+                  >
+                    <div className="card-body p-4">
+                      <div className="flex items-center gap-3">
+                        <span className="text-3xl">🍱</span>
+                        <div className="text-left flex-1">
+                          <h3 className="font-bold text-lg">Menú del Día</h3>
+                          <p className="text-sm text-base-content/60">
+                            {menuDelDia.primeroIds?.length || 0} primeros · {menuDelDia.segundoIds?.length || 0} segundos · {menuDelDia.postreIds?.length || 0} postres
+                          </p>
+                        </div>
+                        <span className="text-xl font-bold text-primary">{formatPrice(menuDelDia.precio)}</span>
+                      </div>
+                    </div>
+                  </button>
+                ) : (
+                  <div className="text-center py-8 text-base-content/50">
+                    <p className="text-lg">🍱</p>
+                    <p className="text-sm mt-2">No hay menú configurado para hoy</p>
+                  </div>
+                )}
+              </div>
+            ) : (
+              /* Carta / Bebidas - product grid grouped by category */
+              <ProductQuickAdd
+                productos={filteredProductos}
+                onAdd={handleAddProduct}
+                onLongPressProduct={setQtyProduct}
+              />
+            )}
 
             {/* Ticket preview */}
             {pedidos.length > 0 && (
@@ -185,6 +238,16 @@ export default function MesaDrawer({ mesaId }) {
           producto={qtyProduct}
           onConfirm={handleQtyConfirm}
           onCancel={() => setQtyProduct(null)}
+        />
+      )}
+
+      {/* Menu selection modal */}
+      {showMenuSelection && menuDelDia && (
+        <MenuSelectionModal
+          menuDelDia={menuDelDia}
+          productos={productos}
+          onConfirm={handleMenuConfirm}
+          onCancel={() => setShowMenuSelection(false)}
         />
       )}
 
