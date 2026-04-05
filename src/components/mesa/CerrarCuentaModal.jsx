@@ -1,4 +1,5 @@
-import { groupByCategory, calcTotal } from '../../utils/orderHelpers'
+import { useState } from 'react'
+import { groupByCategory, calcTotal, getCancelledCount } from '../../utils/orderHelpers'
 import { formatPrice } from '../../utils/formatters'
 import { CATEGORIA_LABELS } from '../../utils/constants'
 
@@ -6,13 +7,16 @@ import { CATEGORIA_LABELS } from '../../utils/constants'
  * Close account confirmation modal with full order breakdown.
  * @param {Object} props
  * @param {Object} props.mesa - Mesa object with pedidos
- * @param {Function} props.onConfirm - Confirm close handler
+ * @param {Function} props.onConfirm - Confirm close handler (paymentMethod) => void
  * @param {Function} props.onCancel - Cancel handler
  */
 export default function CerrarCuentaModal({ mesa, onConfirm, onCancel }) {
+  const [paymentMethod, setPaymentMethod] = useState('efectivo')
+
   const pedidos = mesa.pedidos || []
   const grouped = groupByCategory(pedidos)
   const total = calcTotal(pedidos)
+  const cancelledCount = getCancelledCount(pedidos)
 
   const handleShare = async () => {
     const text = buildTicketText(mesa, grouped, total)
@@ -56,7 +60,7 @@ export default function CerrarCuentaModal({ mesa, onConfirm, onCancel }) {
               </p>
               {items.map((item) => (
                 <div key={item.id}>
-                  <div className="flex justify-between py-0.5">
+                  <div className={`flex justify-between py-0.5 ${item.status === 'cancelado' ? 'opacity-50 line-through' : ''}`}>
                     <span>
                       {item.cantidad}× {item.nombre}
                     </span>
@@ -76,10 +80,46 @@ export default function CerrarCuentaModal({ mesa, onConfirm, onCancel }) {
           ))}
         </div>
 
+        {/* Cancelled count */}
+        {cancelledCount > 0 && (
+          <p className="text-xs text-base-content/50 mb-2">
+            {cancelledCount} artículo{cancelledCount > 1 ? 's' : ''} cancelado{cancelledCount > 1 ? 's' : ''}
+          </p>
+        )}
+
         {/* Total */}
         <div className="border-t-2 border-base-300 pt-2 flex justify-between items-center mb-4">
           <span className="text-lg font-bold">Total</span>
           <span className="text-lg font-bold text-primary">{formatPrice(total)}</span>
+        </div>
+
+        {/* Payment method selector */}
+        <div className="mb-4">
+          <p className="text-sm font-semibold text-base-content/70 mb-2">Método de pago</p>
+          <div className="flex gap-3">
+            <label className="flex items-center gap-2 cursor-pointer min-h-[44px]">
+              <input
+                type="radio"
+                name="paymentMethod"
+                value="efectivo"
+                checked={paymentMethod === 'efectivo'}
+                onChange={(e) => setPaymentMethod(e.target.value)}
+                className="radio radio-primary radio-sm"
+              />
+              <span className="text-sm">💵 Efectivo</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer min-h-[44px]">
+              <input
+                type="radio"
+                name="paymentMethod"
+                value="tarjeta"
+                checked={paymentMethod === 'tarjeta'}
+                onChange={(e) => setPaymentMethod(e.target.value)}
+                className="radio radio-primary radio-sm"
+              />
+              <span className="text-sm">💳 Tarjeta</span>
+            </label>
+          </div>
         </div>
 
         {/* Actions */}
@@ -107,7 +147,7 @@ export default function CerrarCuentaModal({ mesa, onConfirm, onCancel }) {
           </button>
           <button
             className="btn btn-primary flex-1 min-h-[44px]"
-            onClick={onConfirm}
+            onClick={() => onConfirm(paymentMethod)}
           >
             ✓ Cobrar
           </button>

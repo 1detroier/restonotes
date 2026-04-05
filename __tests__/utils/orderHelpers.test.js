@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { calcTotal, groupByCategory, condenseMenuDia, createPedidoItem } from '../../src/utils/orderHelpers'
+import { calcTotal, groupByCategory, condenseMenuDia, createPedidoItem, isCancelled, getCancelledCount } from '../../src/utils/orderHelpers'
 
 describe('orderHelpers', () => {
   describe('calcTotal', () => {
@@ -22,6 +22,23 @@ describe('orderHelpers', () => {
 
     it('handles single item', () => {
       expect(calcTotal([{ precio: 5, cantidad: 3 }])).toBe(15)
+    })
+
+    it('excludes cancelled items from total', () => {
+      const pedidos = [
+        { precio: 10, cantidad: 1, status: 'activo' },
+        { precio: 5, cantidad: 1, status: 'cancelado' },
+        { precio: 8, cantidad: 2, status: 'activo' }
+      ]
+      expect(calcTotal(pedidos)).toBe(26) // 10 + 16, excludes cancelled 5
+    })
+
+    it('treats items without status as active (backward compatible)', () => {
+      const pedidos = [
+        { precio: 10, cantidad: 1 },
+        { precio: 5, cantidad: 1 }
+      ]
+      expect(calcTotal(pedidos)).toBe(15)
     })
   })
 
@@ -120,6 +137,51 @@ describe('orderHelpers', () => {
       const item = createPedidoItem(producto, 1, 'menu', 'Sin azúcar')
       expect(item.tipo).toBe('menu')
       expect(item.nota).toBe('Sin azúcar')
+    })
+
+    it('includes status field with default "activo"', () => {
+      const producto = { id: 1, nombre: 'Café', precio: 1.5, categoria: 'bebida' }
+      const item = createPedidoItem(producto)
+      expect(item.status).toBe('activo')
+    })
+  })
+
+  describe('isCancelled', () => {
+    it('returns true for cancelled items', () => {
+      expect(isCancelled({ status: 'cancelado' })).toBe(true)
+    })
+
+    it('returns false for active items', () => {
+      expect(isCancelled({ status: 'activo' })).toBe(false)
+    })
+
+    it('returns false for items without status', () => {
+      expect(isCancelled({})).toBe(false)
+    })
+  })
+
+  describe('getCancelledCount', () => {
+    it('returns count of cancelled items', () => {
+      const pedidos = [
+        { status: 'activo' },
+        { status: 'cancelado' },
+        { status: 'activo' },
+        { status: 'cancelado' }
+      ]
+      expect(getCancelledCount(pedidos)).toBe(2)
+    })
+
+    it('returns 0 for no cancelled items', () => {
+      const pedidos = [
+        { status: 'activo' },
+        { status: 'activo' }
+      ]
+      expect(getCancelledCount(pedidos)).toBe(0)
+    })
+
+    it('returns 0 for non-array input', () => {
+      expect(getCancelledCount(null)).toBe(0)
+      expect(getCancelledCount(undefined)).toBe(0)
     })
   })
 })

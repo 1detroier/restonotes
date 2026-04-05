@@ -7,6 +7,7 @@ import TicketPreview from './TicketPreview'
 import QuantityModal from './QuantityModal'
 import CerrarCuentaModal from './CerrarCuentaModal'
 import MenuSelectionModal from './MenuSelectionModal'
+import { groupByCategory, calcTotal, getCancelledCount } from '../../utils/orderHelpers'
 import { formatPrice, formatMinutes } from '../../utils/formatters'
 
 /**
@@ -16,7 +17,7 @@ import { formatPrice, formatMinutes } from '../../utils/formatters'
  * @param {number} props.mesaId - Active mesa ID
  */
 export default function MesaDrawer({ mesaId }) {
-  const { mesas, productos, menuDelDia, addItemToMesa, removeItemFromMesa, updateItemQuantity, closeCuenta } = useAppStore()
+  const { mesas, productos, menuDelDia, addItemToMesa, removeItemFromMesa, updateItemQuantity, closeCuenta, cancelItem } = useAppStore()
   const { closeModal } = useUIStore()
   const [activeTab, setActiveTab] = useState('carta')
   const [qtyProduct, setQtyProduct] = useState(null)
@@ -71,13 +72,21 @@ export default function MesaDrawer({ mesaId }) {
     await handleAddProduct(producto, cantidad)
   }
 
-  const handleCloseCuenta = async () => {
+  const handleCloseCuenta = async (paymentMethod) => {
     try {
-      await closeCuenta(mesaId)
+      await closeCuenta(mesaId, paymentMethod)
       setShowCloseConfirm(false)
       closeModal()
     } catch (err) {
       console.error('Failed to close cuenta:', err)
+    }
+  }
+
+  const handleCancelItem = async (id, itemId) => {
+    try {
+      await cancelItem(id, itemId)
+    } catch (err) {
+      console.error('Failed to cancel item:', err)
     }
   }
 
@@ -207,9 +216,9 @@ export default function MesaDrawer({ mesaId }) {
             {pedidos.length > 0 && (
               <div className="border-t border-base-200 mt-2">
                 <h3 className="text-sm font-semibold px-4 py-2 text-base-content/70 uppercase">
-                  Ticket ({pedidos.length} artículos)
+                  Ticket ({pedidos.length} artículo{pedidos.length !== 1 ? 's' : ''}{getCancelledCount(pedidos) > 0 ? `, ${getCancelledCount(pedidos)} cancelado${getCancelledCount(pedidos) !== 1 ? 's' : ''}` : ''})
                 </h3>
-                <TicketPreview pedidos={pedidos} onRemove={handleRemoveItem} onUpdateQty={handleUpdateQty} />
+                <TicketPreview pedidos={pedidos} onRemove={handleRemoveItem} onUpdateQty={handleUpdateQty} onCancel={handleCancelItem} mesaId={mesaId} />
               </div>
             )}
           </div>

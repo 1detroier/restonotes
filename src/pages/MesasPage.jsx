@@ -4,11 +4,13 @@ import { useUIStore } from '../store/useUIStore'
 import MesaGrid from '../components/mesa/MesaGrid'
 import MesaDrawer from '../components/mesa/MesaDrawer'
 import ContextMenu from '../components/mesa/ContextMenu'
+import CerrarCuentaModal from '../components/mesa/CerrarCuentaModal'
 
 export default function MesasPage() {
   const { mesas, loading, setMesaActiva, closeCuenta } = useAppStore()
   const { openModal } = useUIStore()
   const [contextMesa, setContextMesa] = useState(null)
+  const [mesaToClose, setMesaToClose] = useState(null)
 
   const handleMesaTap = (mesa) => {
     setMesaActiva(mesa.id)
@@ -22,9 +24,15 @@ export default function MesasPage() {
     setContextMesa(mesa)
   }
 
-  const handleCloseCuentaFromMenu = async (mesa) => {
+  const handleCloseCuentaFromMenu = (mesa) => {
+    setContextMesa(null)
+    setMesaToClose(mesa)
+  }
+
+  const handleConfirmCloseCuenta = async (paymentMethod) => {
     try {
-      await closeCuenta(mesa.id)
+      await closeCuenta(mesaToClose.id, paymentMethod)
+      setMesaToClose(null)
     } catch (err) {
       console.error('Failed to close cuenta:', err)
     }
@@ -66,6 +74,15 @@ export default function MesasPage() {
           onClose={() => setContextMesa(null)}
           onCloseCuenta={handleCloseCuentaFromMenu}
           onVerTicket={handleVerTicket}
+        />
+      )}
+
+      {/* Close account confirmation from context menu */}
+      {mesaToClose && (
+        <CerrarCuentaModal
+          mesa={mesaToClose}
+          onConfirm={handleConfirmCloseCuenta}
+          onCancel={() => setMesaToClose(null)}
         />
       )}
     </div>

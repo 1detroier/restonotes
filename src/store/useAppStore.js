@@ -3,7 +3,11 @@ import { bootstrapMesas, seedProductos } from '../db/bootstrap'
 import { mesaRepo } from '../db/repositories/mesas'
 import { productoRepo } from '../db/repositories/productos'
 import { menuDiaRepo } from '../db/repositories/menuDia'
-import { createPedidoItem, calcTotal } from '../utils/orderHelpers'
+import { ventaRepo } from '../db/repositories/ventas'
+import { cocinaRepo } from '../db/repositories/cocina'
+import { pedidosLlevarRepo } from '../db/repositories/pedidosLlevar'
+import { createPedidoItem, calcTotal, isCancelled } from '../utils/orderHelpers'
+import { COCINA_STATUS } from '../utils/constants'
 
 /**
  * App Store - reactive mirror of Dexie data.
@@ -16,6 +20,12 @@ export const useAppStore = create((set, get) => ({
   menuDelDia: null,
   mesaActivaId: null,
   loading: false,
+  // Kitchen & sales state
+  ventas: [],
+  cocina: [],
+  // Takeaway state
+  takeaways: [],
+  takeawayActivaId: null,
 
   // Actions
   initApp: async () => {
@@ -259,16 +269,322 @@ export const useAppStore = create((set, get) => ({
   },
 
   /**
-   * Close a mesa's account — reset to libre state.
+   * Close a mesa's account — save venta snapshot then reset to libre state.
+   * Wrapped in atomic operation: venta saved BEFORE mesa reset.
    * @param {number} mesaId - Mesa ID
+   * @param {string} paymentMethod - 'efectivo' | 'tarjeta'
    */
-  closeCuenta: async (mesaId) => {
+  closeCuenta: async (mesaId, paymentMethod = 'efectivo') => {
     try {
+      const { mesas } = get()
+      const mesa = mesas.find((m) => m.id === mesaId)
+      if (!mesa) throw new Error(`Mesa ${mesaId} not found`)
+
+      // Step 1: Save venta snapshot BEFORE resetting mesa
+      const now = new Date()
+      const venta = {
+        mesaId: mesa.numero,
+        fecha: now.toISOString().substring(0, 10),
+        timestamp: now.toISOString(),
+        total: mesa.total || 0,
+        items: JSON.parse(JSON.stringify(mesa.pedidos || [])),
+        paymentMethod
+      }
+      await ventaRepo.create(venta)
+
+      // Step 2: Reset mesa to libre state
       await mesaRepo.closeCuenta(mesaId)
       await get().loadMesas()
     } catch (error) {
       console.error('[AppStore] closeCuenta failed:', error)
       throw error
     }
+  },
+
+  // ============ Item Cancellation ============
+
+  /**
+   * Cancel an individual order item (mark as 'cancelado').
+   * @param {number} mesaId - Mesa ID
+   * @param {string} itemId - PedidoItem id
+   */
+  cancelItem: async (mesaId, itemId) => {
+    try {
+      const { mesas } = get()
+      const mesa = mesas.find((m) => m.id === mesaId)
+      if (!mesa) throw new Error(`Mesa ${mesaId} not found`)
+
+      const pedidos = (mesa.pedidos || []).map((p) => {
+        if (p.id === itemId) {
+          return { ...p, status: 'cancelado' }
+        }
+        return p
+      })
+      const total = calcTotal(pedidos)
+
+      await mesaRepo.updatePedidos(mesaId, pedidos, total)
+
+      // Update local state directly
+      set((state) => ({
+        mesas: state.mesas.map((m) =>
+          m.id === mesaId ? { ...m, pedidos, total } : m
+        )
+      }))
+    } catch (error) {
+      console.error('[AppStore] cancelItem failed:', error)
+      throw error
+    }
+  },
+
+  // ============ Ventas (Sales) ============
+
+  /**
+   * Save a venta snapshot (used by closeCuenta and takeaway pay).
+   * @param {Object} ventaData - Venta record
+   * @returns {Promise<number>} Venta ID
+   */
+  saveVenta: async (ventaData) => {
+    try {
+      return await ventaRepo.create(ventaData)
+    } catch (error) {
+      console.error('[AppStore] saveVenta failed:', error)
+      throw error
+    }
+  },
+
+  /**
+   * Load ventas, optionally filtered by date.
+   * @param {string} fecha - YYYY-MM-DD (optional, defaults to today)
+   */
+  loadVentas: async (fecha) => {
+    try {
+      const date = fecha || new Date().toISOString().substring(0, 10)
+      const ventas = await ventaRepo.getByFecha(date)
+      set({ ventas })
+    } catch (error) {
+      console.error('[AppStore] loadVentas failed:', error)
+    }
+  },
+
+  // ============ Cocina (Kitchen) ============
+
+  /**
+   * Load pending cocina items into store.
+   */
+  loadCocina: async () => {
+    try {
+      const cocina = await cocinaRepo.getPending()
+      set({ cocina })
+    } catch (error) {
+      console.error('[AppStore] loadCocina failed:', error)
+    }
+  },
+
+  /**
+   * Advance a cocina item's status: pendiente → en_curso → listo.
+   * @param {number} cocinaId - Cocina item ID
+   */
+  advanceCocinaStatus: async (cocinaId) => {
+    try {
+      const { cocina } = get()
+      const item = cocina.find((c) => c.id === cocinaId)
+      if (!item) return
+
+      const statusFlow = [COCINA_STATUS.PENDIENTE, COCINA_STATUS.EN_CURSO, COCINA_STATUS.LISTO]
+      const currentIdx = statusFlow.indexOf(item.status)
+      if (currentIdx < statusFlow.length - 1) {
+        const newStatus = statusFlow[currentIdx + 1]
+        await cocinaRepo.updateStatus(cocinaId, newStatus)
+        // Remove 'listo' items from local state (they auto-hide)
+        if (newStatus === COCINA_STATUS.LISTO) {
+          set((state) => ({
+            cocina: state.cocina.filter((c) => c.id !== cocinaId)
+          }))
+        } else {
+          await get().loadCocina()
+        }
+      }
+    } catch (error) {
+      console.error('[AppStore] advanceCocinaStatus failed:', error)
+    }
+  },
+
+  /**
+   * Sync cocina table with current occupied mesas' pedidos.
+   * Adds new items that aren't in cocina yet.
+   */
+  syncCocina: async () => {
+    try {
+      const { mesas } = get()
+      const occupiedMesas = mesas.filter((m) => m.estado === 'ocupada' && m.pedidos && m.pedidos.length > 0)
+
+      for (const mesa of occupiedMesas) {
+        const existingItems = await cocinaRepo.getByMesaId(mesa.id)
+        const existingPedidoIds = new Set(existingItems.map((c) => c.pedidoId))
+
+        for (const pedido of mesa.pedidos) {
+          if (!existingPedidoIds.has(pedido.id) && !isCancelled(pedido)) {
+            await cocinaRepo.create({
+              mesaId: mesa.id,
+              pedidoId: pedido.id,
+              productoNombre: pedido.nombre,
+              cantidad: pedido.cantidad,
+              precio: pedido.precio,
+              status: COCINA_STATUS.PENDIENTE,
+              timestamp: new Date().toISOString(),
+              nota: pedido.nota || ''
+            })
+          }
+        }
+      }
+      await get().loadCocina()
+    } catch (error) {
+      console.error('[AppStore] syncCocina failed:', error)
+    }
+  },
+
+  // ============ Takeaway Orders ============
+
+  /**
+   * Create a new takeaway order.
+   * @param {string} customerName - Customer name
+   * @returns {Promise<number>} Order ID
+   */
+  createTakeaway: async (customerName) => {
+    try {
+      const now = new Date().toISOString()
+      const order = {
+        customerName,
+        pedidos: [],
+        status: 'pendiente',
+        total: 0,
+        createdAt: now,
+        updatedAt: now
+      }
+      const id = await pedidosLlevarRepo.create(order)
+      await get().loadTakeaways()
+      return id
+    } catch (error) {
+      console.error('[AppStore] createTakeaway failed:', error)
+      throw error
+    }
+  },
+
+  /**
+   * Update a takeaway order's fields.
+   * @param {number} id - Order ID
+   * @param {Object} data - Fields to update
+   */
+  updateTakeaway: async (id, data) => {
+    try {
+      await pedidosLlevarRepo.update(id, data)
+      await get().loadTakeaways()
+    } catch (error) {
+      console.error('[AppStore] updateTakeaway failed:', error)
+      throw error
+    }
+  },
+
+  /**
+   * Delete a takeaway order.
+   * @param {number} id - Order ID
+   */
+  deleteTakeaway: async (id) => {
+    try {
+      await pedidosLlevarRepo.delete(id)
+      await get().loadTakeaways()
+    } catch (error) {
+      console.error('[AppStore] deleteTakeaway failed:', error)
+      throw error
+    }
+  },
+
+  /**
+   * Load all takeaway orders into store.
+   */
+  loadTakeaways: async () => {
+    try {
+      const takeaways = await pedidosLlevarRepo.getAll()
+      set({ takeaways })
+    } catch (error) {
+      console.error('[AppStore] loadTakeaways failed:', error)
+    }
+  },
+
+  /**
+   * Add an item to a takeaway order.
+   * @param {number} takeawayId - Order ID
+   * @param {Object} producto - Producto object
+   * @param {number} cantidad - Quantity
+   * @param {string} tipo - 'carta' | 'menu'
+   * @param {string} nota - Optional note
+   */
+  addTakeawayItem: async (takeawayId, producto, cantidad = 1, tipo = 'carta', nota = '') => {
+    try {
+      const { takeaways } = get()
+      const order = takeaways.find((t) => t.id === takeawayId)
+      if (!order) throw new Error(`Takeaway order ${takeawayId} not found`)
+
+      const pedidos = order.pedidos || []
+      const newItem = createPedidoItem(producto, cantidad, tipo, nota)
+
+      // Check if same productoId already exists
+      const existingIdx = pedidos.findIndex(
+        (p) => p.productoId === producto.id && p.categoria === producto.categoria
+      )
+
+      if (existingIdx >= 0) {
+        pedidos[existingIdx].cantidad += cantidad
+        pedidos[existingIdx].subtotal = pedidos[existingIdx].precio * pedidos[existingIdx].cantidad
+      } else {
+        pedidos.push(newItem)
+      }
+
+      const total = calcTotal(pedidos)
+      await pedidosLlevarRepo.update(takeawayId, { pedidos, total })
+      await get().loadTakeaways()
+    } catch (error) {
+      console.error('[AppStore] addTakeawayItem failed:', error)
+      throw error
+    }
+  },
+
+  /**
+   * Pay a takeaway order — save venta and mark as pagado.
+   * @param {number} id - Order ID
+   * @param {string} paymentMethod - 'efectivo' | 'tarjeta'
+   */
+  payTakeaway: async (id, paymentMethod = 'efectivo') => {
+    try {
+      const { takeaways } = get()
+      const order = takeaways.find((t) => t.id === id)
+      if (!order) throw new Error(`Takeaway order ${id} not found`)
+
+      // Save venta snapshot
+      const now = new Date()
+      await ventaRepo.create({
+        mesaId: null, // null for takeaway
+        fecha: now.toISOString().substring(0, 10),
+        timestamp: now.toISOString(),
+        total: order.total || 0,
+        items: JSON.parse(JSON.stringify(order.pedidos || [])),
+        paymentMethod
+      })
+
+      // Mark as pagado
+      await pedidosLlevarRepo.update(id, { status: 'pagado' })
+      await get().loadTakeaways()
+    } catch (error) {
+      console.error('[AppStore] payTakeaway failed:', error)
+      throw error
+    }
+  },
+
+  /**
+   * Set the active takeaway order being edited.
+   * @param {number|null} id - Takeaway order ID or null
+   */
+  setTakeawayActiva: (id) => {
+    set({ takeawayActivaId: id })
   }
 }))

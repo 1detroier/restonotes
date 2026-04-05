@@ -1,13 +1,34 @@
 /**
  * Calculate total from pedidos array.
+ * Excludes items where status === 'cancelado'.
  * @param {Array} pedidos - Array of PedidoItem objects
- * @returns {number} Sum of (precio * cantidad)
+ * @returns {number} Sum of (precio * cantidad) for non-cancelled items
  */
 export function calcTotal(pedidos) {
   if (!Array.isArray(pedidos) || pedidos.length === 0) return 0
   return pedidos.reduce((sum, item) => {
+    if (item.status === 'cancelado') return sum
     return sum + (item.precio * item.cantidad)
   }, 0)
+}
+
+/**
+ * Check if a pedido item is cancelled.
+ * @param {Object} item - PedidoItem object
+ * @returns {boolean} True if item.status === 'cancelado'
+ */
+export function isCancelled(item) {
+  return item.status === 'cancelado'
+}
+
+/**
+ * Count cancelled items in pedidos array.
+ * @param {Array} pedidos - Array of PedidoItem objects
+ * @returns {number} Count of items with status === 'cancelado'
+ */
+export function getCancelledCount(pedidos) {
+  if (!Array.isArray(pedidos)) return 0
+  return pedidos.filter((item) => item.status === 'cancelado').length
 }
 
 /**
@@ -81,6 +102,7 @@ export function createPedidoItem(producto, cantidad = 1, tipo = 'carta', nota = 
     tipo,
     nota,
     subtotal: precio * cantidad,
-    emoji: producto.emoji || ''
+    emoji: producto.emoji || '',
+    status: 'activo'
   }
 }

@@ -21,7 +21,48 @@ export const ESTADOS_MESA = {
 export const TABS = {
   MESAS: 'mesas',
   CARTA: 'carta',
-  MENU: 'menu'
+  MENU: 'menu',
+  COCINA: 'cocina',
+  PARA_LLEVAR: 'para_llevar',
+  VENTAS: 'ventas'
+}
+
+/** Kitchen item status values */
+export const COCINA_STATUS = {
+  PENDIENTE: 'pendiente',
+  EN_CURSO: 'en_curso',
+  LISTO: 'listo',
+  CANCELADO: 'cancelado'
+}
+
+/** Kitchen status → daisyUI badge color mapping */
+export const COCINA_STATUS_COLORS = {
+  pendiente: 'warning',
+  en_curso: 'info',
+  listo: 'success',
+  cancelado: 'error'
+}
+
+/** Takeaway order status values */
+export const TAKEAWAY_STATUS = {
+  PENDIENTE: 'pendiente',
+  LISTO: 'listo',
+  ENTREGADO: 'entregado',
+  PAGADO: 'pagado'
+}
+
+/** Takeaway status → daisyUI badge color mapping */
+export const TAKEAWAY_STATUS_COLORS = {
+  pendiente: 'warning',
+  listo: 'success',
+  entregado: 'info',
+  pagado: 'ghost'
+}
+
+/** Pedido item status values */
+export const PEDIDO_STATUS = {
+  ACTIVO: 'activo',
+  CANCELADO: 'cancelado'
 }
 
 /** Food emojis for producto selection (5x4 grid) */

@@ -97,8 +97,18 @@ describe('MesasPage Integration', () => {
     fireEvent.mouseDown(mesa2)
     await new Promise((r) => setTimeout(r, 850))
 
+    // Click "Cerrar cuenta" → opens CerrarCuentaModal
     fireEvent.click(screen.getByText('🧾 Cerrar cuenta'))
 
-    expect(mockCloseCuenta).toHaveBeenCalledWith(2)
+    // Now the modal should be visible — click "Cobrar"
+    await waitFor(() => {
+      expect(screen.getByText('✓ Cobrar')).toBeInTheDocument()
+    })
+    fireEvent.click(screen.getByText('✓ Cobrar'))
+
+    // closeCuenta should be called with mesaId and paymentMethod (default: 'efectivo')
+    await waitFor(() => {
+      expect(mockCloseCuenta).toHaveBeenCalledWith(2, 'efectivo')
+    })
   })
 })

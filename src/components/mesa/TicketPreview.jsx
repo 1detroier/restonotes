@@ -1,17 +1,20 @@
 import { useSwipe } from '../../hooks/useSwipe'
-import { groupByCategory, calcTotal } from '../../utils/orderHelpers'
+import { groupByCategory, calcTotal, getCancelledCount } from '../../utils/orderHelpers'
 import { formatPrice } from '../../utils/formatters'
 import { CATEGORIA_LABELS } from '../../utils/constants'
 
 /**
  * Ticket preview showing grouped order items with subtotals.
  * Supports swipe-left to remove items.
+ * Cancel buttons for individual items.
  * @param {Object} props
  * @param {Array} props.pedidos - Array of PedidoItem objects
  * @param {Function} props.onRemove - Remove handler (tempId) => void
  * @param {Function} props.onUpdateQty - Update quantity handler (tempId, newQty) => void
+ * @param {Function} props.onCancel - Cancel item handler (mesaId, itemId) => void
+ * @param {number} props.mesaId - Mesa ID for cancellation
  */
-export default function TicketPreview({ pedidos, onRemove, onUpdateQty }) {
+export default function TicketPreview({ pedidos, onRemove, onUpdateQty, onCancel, mesaId }) {
   if (!pedidos || pedidos.length === 0) {
     return (
       <div className="flex items-center justify-center h-32 p-4">
@@ -22,6 +25,8 @@ export default function TicketPreview({ pedidos, onRemove, onUpdateQty }) {
 
   const grouped = groupByCategory(pedidos)
   const total = calcTotal(pedidos)
+  const cancelledCount = getCancelledCount(pedidos)
+  const activeCount = pedidos.length - cancelledCount
 
   return (
     <div className="p-2">
@@ -37,6 +42,8 @@ export default function TicketPreview({ pedidos, onRemove, onUpdateQty }) {
                 item={item}
                 onRemove={() => onRemove?.(item.id)}
                 onUpdateQty={onUpdateQty}
+                onCancel={() => onCancel?.(mesaId, item.id)}
+                mesaId={mesaId}
               />
             ))}
           </div>
@@ -49,7 +56,14 @@ export default function TicketPreview({ pedidos, onRemove, onUpdateQty }) {
 
       {/* Grand total */}
       <div className="border-t-2 border-base-300 pt-2 mt-2 flex justify-between items-center px-2">
-        <span className="text-lg font-bold">Total</span>
+        <span className="text-lg font-bold">
+          Total
+          {cancelledCount > 0 && (
+            <span className="text-xs font-normal text-base-content/50 ml-1">
+              ({activeCount} art. — {cancelledCount} cancelado{cancelledCount > 1 ? 's' : ''})
+            </span>
+          )}
+        </span>
         <span className="text-lg font-bold text-primary">{formatPrice(total)}</span>
       </div>
     </div>
@@ -57,11 +71,18 @@ export default function TicketPreview({ pedidos, onRemove, onUpdateQty }) {
 }
 
 /**
- * Individual ticket item with swipe-to-delete and +/- quantity controls.
+ * Individual ticket item with swipe-to-delete, +/- quantity controls, and cancel button.
  */
-function SwipeableItem({ item, onRemove, onUpdateQty }) {
+function SwipeableItem({ item, onRemove, onUpdateQty, onCancel, mesaId }) {
   const swipe = useSwipe(onRemove)
   const isMenu = item.categoria === 'menu'
+  const isCancelled = item.status === 'cancelado'
+
+  const handleCancel = () => {
+    if (window.confirm(`¿Cancelar ${item.nombre}?`)) {
+      onCancel?.(mesaId, item.id)
+    }
+  }
 
   return (
     <div className="relative overflow-hidden">
@@ -72,14 +93,16 @@ function SwipeableItem({ item, onRemove, onUpdateQty }) {
 
       {/* Foreground content */}
       <div
-        className="relative flex justify-between items-start px-3 py-2 bg-base-200 transition-transform"
+        className={`relative flex justify-between items-start px-3 py-2 bg-base-200 transition-transform ${
+          isCancelled ? 'opacity-50' : ''
+        }`}
         style={{ transform: `translateX(${swipe.translateX}px)` }}
         onTouchStart={swipe.onTouchStart}
         onTouchMove={swipe.onTouchMove}
         onTouchEnd={swipe.onTouchEnd}
       >
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
+          <div className={`flex items-center gap-2 ${isCancelled ? 'line-through' : ''}`}>
             <span className="text-sm font-bold text-primary">{item.cantidad}×</span>
             <span className="text-sm">{item.emoji || ''} {item.nombre}</span>
           </div>
@@ -99,6 +122,16 @@ function SwipeableItem({ item, onRemove, onUpdateQty }) {
           )}
         </div>
         <div className="flex items-center gap-1 shrink-0">
+          {/* Cancel button (hidden for already-cancelled items) */}
+          {!isCancelled && (
+            <button
+              className="btn btn-xs btn-ghost min-h-[44px] min-w-[44px] p-1 text-error"
+              onClick={handleCancel}
+              aria-label={`Cancelar ${item.nombre}`}
+            >
+              🚫
+            </button>
+          )}
           {/* Quantity controls */}
           <button
             className="btn btn-xs btn-ghost min-h-[32px] min-w-[32px] p-1"
