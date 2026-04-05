@@ -22,7 +22,7 @@ export default function MenuSelectionModal({ menuDelDia, productos, onConfirm, o
 
   const primeros = productos.filter(p => primeroIds.includes(p.id) && p.activo)
   const segundos = productos.filter(p => segundoIds.includes(p.id) && p.activo)
-  const postres = productos.filter(p => postreIds.includes(p.id) && p.activo)
+  const postres = productos.filter(p => p.categoria === 'postres' && p.activo)
   // For drinks, show all active beverage products from carta
   const bebidas = productos.filter(p => p.categoria === 'bebidas' && p.activo)
 

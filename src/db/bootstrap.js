@@ -55,6 +55,9 @@ export async function seedProductos() {
       // Entrantes
       { nombre: 'Ensalada Mixta', precio: 6.50, categoria: 'entrantes', emoji: '🥗', activo: true, createdAt: now, updatedAt: now },
       { nombre: 'Tortilla Española', precio: 7.00, categoria: 'entrantes', emoji: '🍳', activo: true, createdAt: now, updatedAt: now },
+      // Postres
+      { nombre: 'Flan de Huevo', precio: 3.50, categoria: 'postres', emoji: '🍮', activo: true, createdAt: now, updatedAt: now },
+      { nombre: 'Tres Leches', precio: 4.00, categoria: 'postres', emoji: '🍰', activo: true, createdAt: now, updatedAt: now },
       // Bebidas
       { nombre: 'Agua Mineral', precio: 1.20, categoria: 'bebidas', emoji: '💧', activo: true, createdAt: now, updatedAt: now },
       { nombre: 'Cerveza Caña', precio: 2.00, categoria: 'bebidas', emoji: '🍺', activo: true, createdAt: now, updatedAt: now },

@@ -63,17 +63,17 @@ describe('bootstrap', () => {
       await seedProductos()
 
       const countAfter = await db.productos.count()
-      expect(countAfter).toBe(12)
+      expect(countAfter).toBe(14)
     })
 
     it('is idempotent - does not duplicate on second call', async () => {
       await seedProductos()
       const countFirst = await db.productos.count()
-      expect(countFirst).toBe(12)
+      expect(countFirst).toBe(14)
 
       await seedProductos()
       const countSecond = await db.productos.count()
-      expect(countSecond).toBe(12)
+      expect(countSecond).toBe(14)
     })
 
     it('creates products with activo=true', async () => {
