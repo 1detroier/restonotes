@@ -45,6 +45,7 @@ describe('MesasPage Integration', () => {
     const { useAppStore } = await import('../../src/store/useAppStore')
     useAppStore.mockReturnValue({
       mesas,
+      takeaways: [],
       productos: [
         { id: 1, nombre: 'Café', precio: 1.5, categoria: 'bebida', emoji: '☕', activo: true },
         { id: 2, nombre: 'Ensalada', precio: 8, categoria: 'primero', emoji: '🥗', activo: true }

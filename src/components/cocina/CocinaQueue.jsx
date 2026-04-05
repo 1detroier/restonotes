@@ -29,17 +29,20 @@ export default function CocinaQueue({ items, onCompleteMesa }) {
         const mesaItems = groupedByMesa[mesaId].sort(
           (a, b) => a.timestamp.localeCompare(b.timestamp)
         )
+        const labelId = mesaId.toString()
+        const isTakeaway = labelId.startsWith('TL-') || labelId.startsWith('tl-')
+        const heading = isTakeaway ? `Para llevar #${labelId.replace(/tl-/i, '')}` : `Mesa #${mesaId}`
         return (
           <div key={mesaId} className="bg-base-200 rounded-lg p-3">
             <div className="flex justify-between items-center mb-2">
               <h3 className="text-sm font-bold text-base-content/70 uppercase tracking-wide">
-                Mesa #{mesaId}
+                {heading}
               </h3>
               {onCompleteMesa && (
                 <button
                   type="button"
                   className="btn btn-xs btn-ghost"
-                  onClick={() => onCompleteMesa(Number(mesaId))}
+                  onClick={() => onCompleteMesa(isTakeaway ? mesaId : Number(mesaId))}
                 >
                   Completar nota
                 </button>

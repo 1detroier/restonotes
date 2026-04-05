@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useAppStore } from '../store/useAppStore'
 import { useUIStore } from '../store/useUIStore'
 import MesaGrid from '../components/mesa/MesaGrid'
@@ -7,7 +7,7 @@ import ContextMenu from '../components/mesa/ContextMenu'
 import CerrarCuentaModal from '../components/mesa/CerrarCuentaModal'
 
 export default function MesasPage() {
-  const { mesas, loading, setMesaActiva, closeCuenta } = useAppStore()
+  const { mesas, takeaways, loading, setMesaActiva, closeCuenta } = useAppStore()
   const { openModal } = useUIStore()
   const [contextMesa, setContextMesa] = useState(null)
   const [mesaToClose, setMesaToClose] = useState(null)
@@ -42,6 +42,33 @@ export default function MesasPage() {
     handleMesaTap(mesa)
   }
 
+  const timelineItems = useMemo(() => {
+    const mesaEntries = mesas
+      .filter((m) => m.estado === 'ocupada' && m.openedAt)
+      .map((mesa) => ({
+        key: `mesa-${mesa.id}`,
+        label: `Mesa #${mesa.numero}`,
+        time: mesa.openedAt
+      }))
+
+    const takeawayEntries = (takeaways || [])
+      .filter((order) => order.status !== 'pagado')
+      .map((order) => ({
+        key: `takeaway-${order.id}`,
+        label: `📦 ${order.customerName}`,
+        time: order.pickupAt || order.createdAt
+      }))
+
+    return [...mesaEntries, ...takeawayEntries]
+      .filter((item) => item.time)
+      .sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime())
+  }, [mesas, takeaways])
+
+  const formatTimelineTime = (value) => {
+    if (!value) return '--:--'
+    return new Date(value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  }
+
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
@@ -50,20 +77,20 @@ export default function MesasPage() {
         <p className="text-xs text-base-content/60">
           {mesas.filter((m) => m.estado === 'ocupada').length} de {mesas.length} ocupadas
         </p>
-        <div className="mt-2 flex gap-2 overflow-x-auto pb-1">
-          {mesas
-            .filter((m) => m.estado === 'ocupada' && m.openedAt)
-            .sort((a, b) => new Date(a.openedAt).getTime() - new Date(b.openedAt).getTime())
-            .map((mesa) => (
-              <span
-                key={mesa.id}
-                className="badge badge-outline whitespace-nowrap"
-              >
-                #{mesa.numero} · {new Date(mesa.openedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+      </div>
+
+      {timelineItems.length > 0 && (
+        <div className="px-4 py-3 border-b border-base-200 bg-base-100">
+          <p className="text-xs font-semibold text-base-content/60">Orden global de notas</p>
+          <div className="flex flex-wrap gap-2 mt-2">
+            {timelineItems.map((item) => (
+              <span key={item.key} className="badge badge-outline whitespace-nowrap">
+                {item.label} · {formatTimelineTime(item.time)}
               </span>
             ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Grid */}
       <div className="flex-1 overflow-y-auto">
@@ -74,6 +101,7 @@ export default function MesasPage() {
         ) : (
           <MesaGrid
             mesas={mesas}
+            takeaways={takeaways}
             onTap={handleMesaTap}
             onLongPress={handleMesaLongPress}
           />
@@ -94,6 +122,7 @@ export default function MesasPage() {
       {mesaToClose && (
         <CerrarCuentaModal
           mesa={mesaToClose}
+          takeawayOrders={(takeaways || []).filter((order) => order.mesaId === mesaToClose.id && order.status !== 'pagado')}
           onConfirm={handleConfirmCloseCuenta}
           onCancel={() => setMesaToClose(null)}
         />

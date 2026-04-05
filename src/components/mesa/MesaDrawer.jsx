@@ -32,6 +32,9 @@ export default function MesaDrawer({ mesaId }) {
 
   const pedidos = mesa.pedidos || []
   const mesaTakeaways = (takeaways || []).filter((order) => order.mesaId === mesaId && order.status !== 'pagado')
+  const mesaSubtotal = mesa.total || 0
+  const takeawaySubtotal = mesaTakeaways.reduce((sum, order) => sum + (order.total || 0), 0)
+  const combinedTotal = mesaSubtotal + takeawaySubtotal
 
   // Filter products by active tab
   const filteredProductos = productos.filter((p) => {
@@ -146,7 +149,7 @@ export default function MesaDrawer({ mesaId }) {
               <div>
                 <h2 className="text-xl font-bold">Mesa #{mesa.numero}</h2>
                 <div className="flex items-center gap-3 text-sm">
-                  <span className="font-medium text-primary">{formatPrice(mesa.total || 0)}</span>
+                   <span className="font-medium text-primary">{formatPrice(combinedTotal)}</span>
                   {mesa.estado === 'ocupada' && (
                     <span
                       className={`font-medium ${
@@ -281,7 +284,7 @@ export default function MesaDrawer({ mesaId }) {
               >
                 ✕ Cancelar Pedido
               </button>
-              {pedidos.length > 0 && (
+              {(pedidos.length > 0 || mesaTakeaways.length > 0) && (
                 <button
                   className="btn btn-primary flex-1 min-h-[44px]"
                   onClick={() => setShowCloseConfirm(true)}
@@ -317,6 +320,7 @@ export default function MesaDrawer({ mesaId }) {
       {showCloseConfirm && (
         <CerrarCuentaModal
           mesa={mesa}
+          takeawayOrders={mesaTakeaways}
           onConfirm={handleCloseCuenta}
           onCancel={() => setShowCloseConfirm(false)}
         />

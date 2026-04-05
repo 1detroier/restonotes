@@ -40,6 +40,7 @@ export const useAppStore = create((set, get) => ({
       await get().loadProductos()
       await get().loadMenuDelDia()
       await get().loadTakeaways()
+      await get().loadTakeaways()
     } catch (error) {
       console.error('[AppStore] initApp failed:', error)
     } finally {
@@ -277,25 +278,41 @@ export const useAppStore = create((set, get) => ({
    */
   closeCuenta: async (mesaId, paymentMethod = 'efectivo') => {
     try {
-      const { mesas } = get()
+      const { mesas, takeaways } = get()
       const mesa = mesas.find((m) => m.id === mesaId)
       if (!mesa) throw new Error(`Mesa ${mesaId} not found`)
 
-      // Step 1: Save venta snapshot BEFORE resetting mesa
+      const linkedTakeaways = (takeaways || []).filter(
+        (order) => order.mesaId === mesaId && order.status !== 'pagado'
+      )
+
+      const mesaItems = JSON.parse(JSON.stringify(mesa.pedidos || []))
+      const takeawayItems = linkedTakeaways.flatMap((order) => JSON.parse(JSON.stringify(order.pedidos || [])))
+      const combinedItems = [...mesaItems, ...takeawayItems]
+      const takeawayTotal = linkedTakeaways.reduce((sum, order) => sum + (order.total || 0), 0)
+
       const now = new Date()
       const venta = {
         mesaId: mesa.numero,
         fecha: now.toISOString().substring(0, 10),
         timestamp: now.toISOString(),
-        total: mesa.total || 0,
-        items: JSON.parse(JSON.stringify(mesa.pedidos || [])),
+        total: (mesa.total || 0) + takeawayTotal,
+        items: combinedItems,
         paymentMethod
       }
       await ventaRepo.create(venta)
 
-      // Step 2: Reset mesa to libre state
+      if (linkedTakeaways.length > 0) {
+        for (const order of linkedTakeaways) {
+          await pedidosLlevarRepo.delete(order.id)
+        }
+      }
+
       await mesaRepo.closeCuenta(mesaId)
       await get().loadMesas()
+      if (linkedTakeaways.length > 0) {
+        await get().loadTakeaways()
+      }
     } catch (error) {
       console.error('[AppStore] closeCuenta failed:', error)
       throw error
@@ -452,7 +469,7 @@ export const useAppStore = create((set, get) => ({
    */
   syncCocina: async () => {
     try {
-      const { mesas } = get()
+      const { mesas, takeaways } = get()
       const occupiedMesas = mesas.filter((m) => m.estado === 'ocupada' && m.pedidos && m.pedidos.length > 0)
 
       for (const mesa of occupiedMesas) {
@@ -474,6 +491,31 @@ export const useAppStore = create((set, get) => ({
           }
         }
       }
+      const activeTakeaways = (takeaways || []).filter(
+        (order) => order.pedidos && order.pedidos.length > 0 && order.status !== 'pagado'
+      )
+
+      for (const order of activeTakeaways) {
+        const mesaKey = order.mesaId ?? `TL-${order.id}`
+        const existingItems = await cocinaRepo.getByMesaId(mesaKey)
+        const existingPedidoIds = new Set(existingItems.map((c) => c.pedidoId))
+
+        for (const pedido of order.pedidos) {
+          if (!existingPedidoIds.has(pedido.id) && !isCancelled(pedido)) {
+            await cocinaRepo.create({
+              mesaId: mesaKey,
+              pedidoId: pedido.id,
+              productoNombre: pedido.nombre,
+              cantidad: pedido.cantidad,
+              precio: pedido.precio,
+              status: COCINA_STATUS.PENDIENTE,
+              timestamp: new Date().toISOString(),
+              nota: pedido.nota || ''
+            })
+          }
+        }
+      }
+
       await get().loadCocina()
     } catch (error) {
       console.error('[AppStore] syncCocina failed:', error)

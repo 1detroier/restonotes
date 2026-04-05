@@ -15,11 +15,12 @@ const STATE_STYLES = {
  * @param {Function} props.onTap - Tap handler
  * @param {Function} props.onLongPress - Long press handler
  */
-export default function MesaCard({ mesa, onTap, onLongPress }) {
+export default function MesaCard({ mesa, onTap, onLongPress, takeawayTotal = 0, takeawayCount = 0 }) {
   const { minutes, colorState } = useMesaTimer(mesa.openedAt)
   const openedAtLabel = mesa.openedAt
     ? new Date(mesa.openedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     : null
+  const combinedTotal = (mesa.total || 0) + (takeawayTotal || 0)
 
   const longPressHandlers = useLongPress(() => {
     onLongPress?.(mesa)
@@ -62,7 +63,10 @@ export default function MesaCard({ mesa, onTap, onLongPress }) {
           >
             {formatMinutes(minutes)}
           </span>
-          <span className="text-xs font-medium">{formatPrice(mesa.total || 0)}</span>
+          <span className="text-xs font-medium">{formatPrice(combinedTotal)}</span>
+          {takeawayCount > 0 && (
+            <span className="badge badge-outline badge-xs">📦 {takeawayCount}</span>
+          )}
           {openedAtLabel && (
             <span className="text-[11px] uppercase tracking-wide text-base-content/60">
               Tomado {openedAtLabel}

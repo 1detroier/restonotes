@@ -7,7 +7,7 @@ import MesaCard from './MesaCard'
  * @param {Function} props.onTap - Tap handler (mesa) => void
  * @param {Function} props.onLongPress - Long press handler (mesa) => void
  */
-export default function MesaGrid({ mesas, onTap, onLongPress }) {
+export default function MesaGrid({ mesas, takeaways = [], onTap, onLongPress }) {
   if (!mesas || mesas.length === 0) {
     return (
       <div className="flex items-center justify-center h-40">
@@ -15,6 +15,14 @@ export default function MesaGrid({ mesas, onTap, onLongPress }) {
       </div>
     )
   }
+
+  const takeawayMap = (takeaways || []).reduce((acc, order) => {
+    if (order.status === 'pagado' || order.mesaId == null) return acc
+    if (!acc[order.mesaId]) acc[order.mesaId] = { total: 0, count: 0 }
+    acc[order.mesaId].total += order.total || 0
+    acc[order.mesaId].count += 1
+    return acc
+  }, {})
 
   const sortedMesas = [...mesas].sort((a, b) => {
     const aOpen = a.openedAt ? new Date(a.openedAt).getTime() : Infinity
@@ -35,6 +43,8 @@ export default function MesaGrid({ mesas, onTap, onLongPress }) {
         <MesaCard
           key={mesa.id}
           mesa={mesa}
+          takeawayTotal={takeawayMap[mesa.id]?.total || 0}
+          takeawayCount={takeawayMap[mesa.id]?.count || 0}
           onTap={onTap}
           onLongPress={onLongPress}
         />
