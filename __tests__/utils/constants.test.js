@@ -6,13 +6,14 @@ describe('constants', () => {
     expect(MESA_COUNT).toBe(14)
   })
 
-  it('CATEGORIAS_CARTA contains all 7 carta categories', () => {
-    expect(CATEGORIAS_CARTA).toHaveLength(7)
+  it('CATEGORIAS_CARTA contains all 8 carta categories', () => {
+    expect(CATEGORIAS_CARTA).toHaveLength(8)
     expect(CATEGORIAS_CARTA).toContain('con_arroz')
     expect(CATEGORIAS_CARTA).toContain('sin_arroz')
     expect(CATEGORIAS_CARTA).toContain('sopas')
     expect(CATEGORIAS_CARTA).toContain('entrantes')
     expect(CATEGORIAS_CARTA).toContain('arroz_frijoles')
+    expect(CATEGORIAS_CARTA).toContain('bolon')
     expect(CATEGORIAS_CARTA).toContain('postres')
     expect(CATEGORIAS_CARTA).toContain('bebidas')
   })
@@ -25,7 +26,7 @@ describe('constants', () => {
   })
 
   it('CATEGORIAS combines carta and menu categories', () => {
-    expect(CATEGORIAS).toHaveLength(10)
+    expect(CATEGORIAS).toHaveLength(11)
     expect(CATEGORIAS).toEqual([...CATEGORIAS_CARTA, ...CATEGORIAS_MENU])
   })
 
