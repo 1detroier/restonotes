@@ -81,23 +81,19 @@ export default function MesaDrawer({ mesaId }) {
     }
   }
 
-  const handleMenuConfirm = async (primero, segundo, postre) => {
+  const handleMenuConfirm = async (primero, segundo, postre, bebida) => {
     try {
       const menuPrice = menuDelDia?.precio || 0
-      // Add as a single "Menú Completo" item but store components in nota
-      const menuNota = `${primero?.nombre || ''} | ${segundo?.nombre || ''} | ${postre?.nombre || ''}`
+      // Build nota with all selected components
+      const components = [primero?.nombre, segundo?.nombre, postre?.nombre, bebida?.nombre].filter(Boolean)
+      const menuNota = components.join(' | ')
+
       await addItemToMesa(mesaId, {
         id: 'menu-dia',
         nombre: 'Menú Completo',
         precio: menuPrice,
         categoria: 'menu',
-        emoji: '🍱',
-        // Store component IDs for reference
-        _menuComponents: {
-          primeroId: primero?.id,
-          segundoId: segundo?.id,
-          postreId: postre?.id
-        }
+        emoji: '🍱'
       }, 1, 'menu', menuNota)
       setShowMenuSelection(false)
     } catch (err) {

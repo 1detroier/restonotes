@@ -3,26 +3,31 @@ import { CATEGORIAS_CARTA, CATEGORIA_LABELS } from '../../utils/constants'
 import { formatPrice } from '../../utils/formatters'
 
 /**
- * Modal to select 1 primero, 1 segundo, and 1 postre from carta products
- * for the daily menu.
+ * Modal to select 1 primero, 1 segundo, and optionally postre + bebida
+ * for the daily menu. Postre is optional (can be added later).
  */
 export default function MenuSelectionModal({ menuDelDia, productos, onConfirm, onCancel }) {
   const [selected, setSelected] = useState({
     primero: null,
     segundo: null,
-    postre: null
+    postre: null,
+    bebida: null
   })
 
   // Get available products for each slot
   const primeroIds = menuDelDia.primeroIds || []
   const segundoIds = menuDelDia.segundoIds || []
   const postreIds = menuDelDia.postreIds || []
+  const incluyeBebida = menuDelDia.incluyeBebida || false
 
   const primeros = productos.filter(p => primeroIds.includes(p.id) && p.activo)
   const segundos = productos.filter(p => segundoIds.includes(p.id) && p.activo)
   const postres = productos.filter(p => postreIds.includes(p.id) && p.activo)
+  // For drinks, show all active beverage products from carta
+  const bebidas = productos.filter(p => p.categoria === 'bebidas' && p.activo)
 
-  const canConfirm = selected.primero && selected.segundo && selected.postre
+  // Can confirm with just primero + segundo (postre is optional)
+  const canConfirm = selected.primero && selected.segundo
 
   const handleSelect = (slot, producto) => {
     setSelected(prev => ({
@@ -69,27 +74,39 @@ export default function MenuSelectionModal({ menuDelDia, productos, onConfirm, o
             onSelect={(p) => handleSelect('segundo', p)}
           />
 
-          {/* Postre */}
+          {/* Postre - OPTIONAL */}
           <SelectionSection
-            title="Postre"
+            title="Postre (opcional)"
             products={postres}
             selected={selected.postre}
             onSelect={(p) => handleSelect('postre', p)}
+            optional
           />
+
+          {/* Bebida - only if menu includes it */}
+          {incluyeBebida && (
+            <SelectionSection
+              title="Bebida (incluida)"
+              products={bebidas}
+              selected={selected.bebida}
+              onSelect={(p) => handleSelect('bebida', p)}
+              optional
+            />
+          )}
         </div>
 
         {/* Footer */}
         <div className="sticky bottom-0 bg-base-100 border-t border-base-200 p-3">
           <div className="flex justify-between items-center mb-2">
             <span className="text-sm text-base-content/60">
-              {selected.primero ? '✓' : '○'} Primero · {selected.segundo ? '✓' : '○'} Segundo · {selected.postre ? '✓' : '○'} Postre
+              {selected.primero ? '✓' : '○'} Primero · {selected.segundo ? '✓' : '○'} Segundo{selected.postre ? ' · ✓ Postre' : ' · ○ Postre'}{incluyeBebida ? (selected.bebida ? ' · ✓ Bebida' : ' · ○ Bebida') : ''}
             </span>
             <span className="text-lg font-bold text-primary">{formatPrice(menuDelDia.precio)}</span>
           </div>
           <button
             className={`btn w-full min-h-[44px] ${canConfirm ? 'btn-primary' : 'btn-disabled'}`}
             disabled={!canConfirm}
-            onClick={() => onConfirm(selected.primero, selected.segundo, selected.postre)}
+            onClick={() => onConfirm(selected.primero, selected.segundo, selected.postre, selected.bebida)}
           >
             Agregar Menú
           </button>
@@ -99,7 +116,7 @@ export default function MenuSelectionModal({ menuDelDia, productos, onConfirm, o
   )
 }
 
-function SelectionSection({ title, products, selected, onSelect }) {
+function SelectionSection({ title, products, selected, onSelect, optional }) {
   if (!products || products.length === 0) {
     return (
       <div>
@@ -111,7 +128,10 @@ function SelectionSection({ title, products, selected, onSelect }) {
 
   return (
     <div>
-      <h4 className="text-sm font-bold text-base-content/70 mb-2">{title}</h4>
+      <div className="flex items-center gap-2 mb-2">
+        <h4 className="text-sm font-bold text-base-content/70">{title}</h4>
+        {optional && <span className="badge badge-sm badge-ghost">opcional</span>}
+      </div>
       <div className="space-y-1">
         {products.map((p) => {
           const isSelected = selected?.id === p.id
