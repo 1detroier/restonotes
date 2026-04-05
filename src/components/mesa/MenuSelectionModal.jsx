@@ -18,13 +18,16 @@ export default function MenuSelectionModal({ menuDelDia, productos, onConfirm, o
   const primeroIds = menuDelDia.primeroIds || []
   const segundoIds = menuDelDia.segundoIds || []
   const postreIds = menuDelDia.postreIds || []
+  const bebidaIds = menuDelDia.bebidaIds || []
   const incluyeBebida = menuDelDia.incluyeBebida || false
 
   const primeros = productos.filter(p => primeroIds.includes(p.id) && p.activo)
   const segundos = productos.filter(p => segundoIds.includes(p.id) && p.activo)
-  const postres = productos.filter(p => p.categoria === 'postres' && p.activo)
-  // For drinks, show all active beverage products from carta
-  const bebidas = productos.filter(p => p.categoria === 'bebidas' && p.activo)
+  const postres = productos.filter(p => postreIds.includes(p.id) && p.activo)
+  // Use configured bebidaIds if available, fallback to all beverages
+  const bebidas = bebidaIds.length > 0
+    ? productos.filter(p => bebidaIds.includes(p.id) && p.activo)
+    : productos.filter(p => p.categoria === 'bebidas' && p.activo)
 
   // Can confirm with just primero + segundo (postre is optional)
   const canConfirm = selected.primero && selected.segundo

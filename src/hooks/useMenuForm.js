@@ -5,6 +5,7 @@ const defaultValues = {
   primeroIds: [],
   segundoIds: [],
   postreIds: [],
+  bebidaIds: [],
   precio: '',
   incluyeBebida: false
 }
