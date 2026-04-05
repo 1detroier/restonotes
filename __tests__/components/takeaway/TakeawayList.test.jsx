@@ -50,4 +50,12 @@ describe('TakeawayList', () => {
     expect(cards[1]).toHaveTextContent('Pickup tarde')
     expect(cards[2]).toHaveTextContent('Sin hora')
   })
+
+  it('hides paid orders from the list', () => {
+    const orders = [
+      { id: 1, customerName: 'Pagado', status: 'pagado', total: 10, createdAt: '2026-04-05T08:00:00Z' }
+    ]
+    const { container } = render(<TakeawayList orders={orders} />)
+    expect(container.firstChild).toBeNull()
+  })
 })

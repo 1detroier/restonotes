@@ -39,6 +39,7 @@ export const useAppStore = create((set, get) => ({
       await get().loadMesas()
       await get().loadProductos()
       await get().loadMenuDelDia()
+      await get().loadTakeaways()
     } catch (error) {
       console.error('[AppStore] initApp failed:', error)
     } finally {
@@ -432,6 +433,19 @@ export const useAppStore = create((set, get) => ({
     }
   },
 
+  completeMesaCocina: async (mesaId) => {
+    try {
+      const mesaItems = await cocinaRepo.getByMesaId(mesaId)
+      await Promise.all(
+        mesaItems.map((item) => cocinaRepo.updateStatus(item.id, COCINA_STATUS.LISTO))
+      )
+      set((state) => ({ cocina: state.cocina.filter((item) => item.mesaId !== mesaId) }))
+    } catch (error) {
+      console.error('[AppStore] completeMesaCocina failed:', error)
+      throw error
+    }
+  },
+
   /**
    * Sync cocina table with current occupied mesas' pedidos.
    * Adds new items that aren't in cocina yet.
@@ -598,8 +612,7 @@ export const useAppStore = create((set, get) => ({
         paymentMethod
       })
 
-      // Mark as pagado
-      await pedidosLlevarRepo.update(id, { status: 'pagado' })
+      await pedidosLlevarRepo.delete(id)
       await get().loadTakeaways()
     } catch (error) {
       console.error('[AppStore] payTakeaway failed:', error)

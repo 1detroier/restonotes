@@ -38,21 +38,25 @@ describe('MesaDrawer', () => {
 
   const mockLoadMesas = vi.fn()
 
+  const buildStore = (overrides = {}) => ({
+    mesas: [mockMesa],
+    productos: mockProductos,
+    menuDelDia: null,
+    addItemToMesa: vi.fn(),
+    removeItemFromMesa: vi.fn(),
+    updateItemQuantity: vi.fn(),
+    closeCuenta: vi.fn(),
+    cancelItem: vi.fn(),
+    cancelMesaPedido: mockCancelMesaPedido,
+    loadMesas: mockLoadMesas,
+    takeaways: [],
+    ...overrides
+  })
+
   beforeEach(() => {
     mockCloseModal.mockReset()
     mockLoadMesas.mockReset()
-    useAppStore.mockReturnValue({
-      mesas: [mockMesa],
-      productos: mockProductos,
-      menuDelDia: null,
-      addItemToMesa: vi.fn(),
-      removeItemFromMesa: vi.fn(),
-      updateItemQuantity: vi.fn(),
-      closeCuenta: vi.fn(),
-      cancelItem: vi.fn(),
-      cancelMesaPedido: mockCancelMesaPedido,
-      loadMesas: mockLoadMesas
-    })
+    useAppStore.mockReturnValue(buildStore())
   })
 
   it('renders mesa header with number', () => {
@@ -110,5 +114,21 @@ describe('MesaDrawer', () => {
       expect(mockCancelMesaPedido).toHaveBeenCalledWith(1)
       expect(mockCloseModal).toHaveBeenCalled()
     })
+  })
+
+  it('shows linked takeaway summary when mesa has associated pedidos para llevar', () => {
+    const linkedOrder = {
+      id: 99,
+      customerName: 'Para Llevar Juan',
+      pedidos: [{ id: 'a', nombre: 'Empanada', cantidad: 2, precio: 3 }],
+      total: 6,
+      mesaId: 1,
+      status: 'pendiente'
+    }
+    useAppStore.mockReturnValueOnce(buildStore({ takeaways: [linkedOrder] }))
+    render(<MesaDrawer mesaId={1} />)
+    expect(screen.getByText('Para llevar vinculados (1)')).toBeInTheDocument()
+    expect(screen.getByText('📦 Para Llevar Juan')).toBeInTheDocument()
+    expect(screen.getByText('2 × Empanada')).toBeInTheDocument()
   })
 })

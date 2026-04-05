@@ -117,10 +117,10 @@ export default function TakeawayCard({ order }) {
   return (
     <>
       <div
-        className={`card bg-base-200 border border-base-300 min-h-[120px] transition-all cursor-pointer ${
+        className={`card bg-base-200 border border-base-300 min-h-[140px] transition-all cursor-pointer ${
           isPagado ? 'opacity-50' : 'hover:bg-base-300'
         }`}
-        onClick={() => !isPagado && setShowDetail(true)}
+        onClick={() => setShowDetail(true)}
       >
         <div className="card-body p-4">
           <div className="flex justify-between items-start">
@@ -171,6 +171,14 @@ export default function TakeawayCard({ order }) {
               )}
             </div>
           </div>
+
+          <button
+            type="button"
+            className="btn btn-xs btn-primary mt-3"
+            onClick={(e) => { e.stopPropagation(); setShowDetail(true) }}
+          >
+            {isPagado ? 'Ver pedido' : 'Gestionar pedido'}
+          </button>
         </div>
       </div>
 
@@ -187,6 +195,14 @@ export default function TakeawayCard({ order }) {
                 <div>
                   <h2 className="text-xl font-bold">📦 {order.customerName}</h2>
                   <span className="text-sm font-medium text-primary">{formatPrice(order.total || 0)}</span>
+                  <div className="flex gap-1 flex-wrap mt-2">
+                    {pickupLabel && (
+                      <span className="badge badge-outline badge-xs">Recoger {pickupLabel}</span>
+                    )}
+                    {mesaAsociada && (
+                      <span className="badge badge-outline badge-xs">Mesa #{mesaAsociada.numero}</span>
+                    )}
+                  </div>
                 </div>
                 <button className="btn btn-sm btn-ghost btn-circle min-h-[44px] min-w-[44px]" onClick={() => setShowDetail(false)}>✕</button>
               </div>

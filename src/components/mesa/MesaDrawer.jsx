@@ -17,7 +17,7 @@ import { formatPrice, formatMinutes } from '../../utils/formatters'
  * @param {number} props.mesaId - Active mesa ID
  */
 export default function MesaDrawer({ mesaId }) {
-  const { mesas, productos, menuDelDia, addItemToMesa, removeItemFromMesa, updateItemQuantity, closeCuenta, cancelItem, cancelMesaPedido, loadMesas } = useAppStore()
+  const { mesas, productos, menuDelDia, takeaways, addItemToMesa, removeItemFromMesa, updateItemQuantity, closeCuenta, cancelItem, cancelMesaPedido, loadMesas } = useAppStore()
   const { closeModal } = useUIStore()
   const [activeTab, setActiveTab] = useState('carta')
   const [qtyProduct, setQtyProduct] = useState(null)
@@ -31,6 +31,7 @@ export default function MesaDrawer({ mesaId }) {
   if (!mesa) return null
 
   const pedidos = mesa.pedidos || []
+  const mesaTakeaways = (takeaways || []).filter((order) => order.mesaId === mesaId && order.status !== 'pagado')
 
   // Filter products by active tab
   const filteredProductos = productos.filter((p) => {
@@ -230,6 +231,39 @@ export default function MesaDrawer({ mesaId }) {
                   Ticket ({pedidos.length} artículo{pedidos.length !== 1 ? 's' : ''}{getCancelledCount(pedidos) > 0 ? `, ${getCancelledCount(pedidos)} cancelado${getCancelledCount(pedidos) !== 1 ? 's' : ''}` : ''})
                 </h3>
                 <TicketPreview pedidos={pedidos} onRemove={handleRemoveItem} onUpdateQty={handleUpdateQty} onCancel={handleCancelItem} mesaId={mesaId} />
+              </div>
+            )}
+
+            {mesaTakeaways.length > 0 && (
+              <div className="border-t border-base-200 mt-2">
+                <h3 className="text-sm font-semibold px-4 py-2 text-base-content/70 uppercase">
+                  Para llevar vinculados ({mesaTakeaways.length})
+                </h3>
+                <div className="px-4 pb-3 space-y-3">
+                  {mesaTakeaways.map((order) => (
+                    <div key={order.id} className="rounded-lg border border-base-300 p-3 bg-base-100">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="font-semibold text-sm">📦 {order.customerName}</p>
+                          <p className="text-xs text-base-content/60">
+                            {order.pedidos?.length || 0} artículo{(order.pedidos?.length || 0) !== 1 ? 's' : ''}
+                          </p>
+                        </div>
+                        <span className="text-xs font-bold text-primary">{formatPrice(order.total || 0)}</span>
+                      </div>
+                      {order.pedidos && order.pedidos.length > 0 && (
+                        <ul className="text-xs mt-2 text-base-content/70 space-y-1">
+                          {order.pedidos.map((item) => (
+                            <li key={item.id}>
+                              {item.cantidad} × {item.nombre}
+                              {item.nota ? ` (${item.nota})` : ''}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>

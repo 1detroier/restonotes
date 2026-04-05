@@ -8,7 +8,10 @@ import TakeawayCard from './TakeawayCard'
 export default function TakeawayList({ orders }) {
   if (!orders || orders.length === 0) return null
 
-  const sorted = [...orders].sort((a, b) => {
+  const activeOrders = orders.filter((order) => order.status !== 'pagado')
+  if (activeOrders.length === 0) return null
+
+  const sorted = [...activeOrders].sort((a, b) => {
     const pickupA = a.pickupAt ? new Date(a.pickupAt).getTime() : Infinity
     const pickupB = b.pickupAt ? new Date(b.pickupAt).getTime() : Infinity
     if (pickupA !== pickupB) return pickupA - pickupB

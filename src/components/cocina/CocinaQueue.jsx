@@ -5,7 +5,7 @@ import CocinaItem from './CocinaItem'
  * @param {Object} props
  * @param {Array} props.items - Array of CocinaItem objects
  */
-export default function CocinaQueue({ items }) {
+export default function CocinaQueue({ items, onCompleteMesa }) {
   if (!items || items.length === 0) return null
 
   // Group items by mesaId
@@ -31,9 +31,20 @@ export default function CocinaQueue({ items }) {
         )
         return (
           <div key={mesaId} className="bg-base-200 rounded-lg p-3">
-            <h3 className="text-sm font-bold text-base-content/70 uppercase tracking-wide mb-2">
-              Mesa #{mesaId}
-            </h3>
+            <div className="flex justify-between items-center mb-2">
+              <h3 className="text-sm font-bold text-base-content/70 uppercase tracking-wide">
+                Mesa #{mesaId}
+              </h3>
+              {onCompleteMesa && (
+                <button
+                  type="button"
+                  className="btn btn-xs btn-ghost"
+                  onClick={() => onCompleteMesa(Number(mesaId))}
+                >
+                  Completar nota
+                </button>
+              )}
+            </div>
             <div className="space-y-2">
               {mesaItems.map((item) => (
                 <CocinaItem key={item.id} item={item} />

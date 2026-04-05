@@ -6,7 +6,7 @@ import CocinaQueue from '../components/cocina/CocinaQueue'
  * Kitchen queue page — orchestrates loading and auto-refresh of cocina items.
  */
 export default function CocinaPage() {
-  const { cocina, loadCocina, syncCocina } = useAppStore()
+  const { cocina, syncCocina, completeMesaCocina } = useAppStore()
 
   const refresh = useCallback(async () => {
     await syncCocina()
@@ -40,7 +40,7 @@ export default function CocinaPage() {
             <p className="text-base-content/50 text-lg">No hay pedidos pendientes 🍳</p>
           </div>
         ) : (
-          <CocinaQueue items={cocina} />
+          <CocinaQueue items={cocina} onCompleteMesa={completeMesaCocina} />
         )}
       </div>
     </div>

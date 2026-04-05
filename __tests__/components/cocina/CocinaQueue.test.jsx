@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import CocinaQueue from '../../../src/components/cocina/CocinaQueue'
 
 // Mock the store since CocinaItem imports it
@@ -53,5 +53,13 @@ describe('CocinaQueue', () => {
     expect(mesa3Section).toHaveTextContent('Café')
     expect(mesa3Section).toHaveTextContent('Ensalada')
     expect(mesa3Section).not.toHaveTextContent('Tarta')
+  })
+
+  it('renders completar nota button when handler is provided', () => {
+    const handler = vi.fn()
+    render(<CocinaQueue items={mockItems} onCompleteMesa={handler} />)
+    const completeButtons = screen.getAllByText('Completar nota')
+    fireEvent.click(completeButtons[0])
+    expect(handler).toHaveBeenCalledWith(3)
   })
 })

@@ -79,4 +79,15 @@ describe('TakeawayCard', () => {
     render(<TakeawayCard order={order} />)
     expect(screen.queryByText('Cancelar')).not.toBeInTheDocument()
   })
+
+  it('shows gestionar button for active orders', () => {
+    render(<TakeawayCard order={mockOrder} />)
+    expect(screen.getByText('Gestionar pedido')).toBeInTheDocument()
+  })
+
+  it('shows ver pedido button when pagado', () => {
+    const order = { ...mockOrder, status: 'pagado' }
+    render(<TakeawayCard order={order} />)
+    expect(screen.getByText('Ver pedido')).toBeInTheDocument()
+  })
 })
