@@ -6,7 +6,8 @@ import { menuDiaRepo } from '../db/repositories/menuDia'
 import { ventaRepo } from '../db/repositories/ventas'
 import { cocinaRepo } from '../db/repositories/cocina'
 import { pedidosLlevarRepo } from '../db/repositories/pedidosLlevar'
-import { createPedidoItem, calcTotal, isCancelled } from '../utils/orderHelpers'
+import { createPedidoItem, calcTotal, isCancelled, formatVariantLabel } from '../utils/orderHelpers'
+import { normalizeVariantGroups, isSameVariantOptions } from '../utils/variants'
 import { COCINA_STATUS } from '../utils/constants'
 
 /**
@@ -39,7 +40,6 @@ export const useAppStore = create((set, get) => ({
       await get().loadMesas()
       await get().loadProductos()
       await get().loadMenuDelDia()
-      await get().loadTakeaways()
       await get().loadTakeaways()
     } catch (error) {
       console.error('[AppStore] initApp failed:', error)
@@ -85,8 +85,11 @@ export const useAppStore = create((set, get) => ({
   addProducto: async (data) => {
     try {
       const now = new Date().toISOString()
+      const normalizedVariants = data.hasVariants ? normalizeVariantGroups(data.variantGroups) : []
       const producto = {
         ...data,
+        hasVariants: data.hasVariants && normalizedVariants.length > 0,
+        variantGroups: data.hasVariants ? normalizedVariants : [],
         activo: true,
         createdAt: now,
         updatedAt: now
@@ -101,8 +104,11 @@ export const useAppStore = create((set, get) => ({
 
   updateProducto: async (id, data) => {
     try {
+      const normalizedVariants = data.hasVariants ? normalizeVariantGroups(data.variantGroups) : []
       await productoRepo.update(id, {
         ...data,
+        hasVariants: data.hasVariants && normalizedVariants.length > 0,
+        variantGroups: data.hasVariants ? normalizedVariants : [],
         updatedAt: new Date().toISOString()
       })
       await get().loadProductos()
@@ -179,18 +185,22 @@ export const useAppStore = create((set, get) => ({
    * @param {string} tipo - 'carta' | 'menu' (default 'carta')
    * @param {string} nota - Optional note
    */
-  addItemToMesa: async (mesaId, producto, cantidad = 1, tipo = 'carta', nota = '') => {
+  addItemToMesa: async (mesaId, producto, cantidad = 1, tipo = 'carta', nota = '', variantOptions = []) => {
     try {
       const { mesas } = get()
       const mesa = mesas.find((m) => m.id === mesaId)
       if (!mesa) throw new Error(`Mesa ${mesaId} not found`)
 
       const pedidos = mesa.pedidos || []
-      const newItem = createPedidoItem(producto, cantidad, tipo, nota)
+      const normalizedVariants = Array.isArray(variantOptions) ? variantOptions : []
+      const newItem = createPedidoItem(producto, cantidad, tipo, nota, normalizedVariants)
 
       // Check if same productoId already exists — sum quantities
       const existingIdx = pedidos.findIndex(
-        (p) => p.productoId === producto.id && p.categoria === producto.categoria
+        (p) =>
+          p.productoId === producto.id &&
+          p.categoria === producto.categoria &&
+          isSameVariantOptions(p.variantOptions, normalizedVariants)
       )
 
       if (existingIdx >= 0) {
@@ -452,11 +462,12 @@ export const useAppStore = create((set, get) => ({
 
   completeMesaCocina: async (mesaId) => {
     try {
-      const mesaItems = await cocinaRepo.getByMesaId(mesaId)
+      const targetId = typeof mesaId === 'string' ? Number(mesaId) : mesaId
+      const mesaItems = await cocinaRepo.getByMesaId(targetId)
       await Promise.all(
         mesaItems.map((item) => cocinaRepo.updateStatus(item.id, COCINA_STATUS.LISTO))
       )
-      set((state) => ({ cocina: state.cocina.filter((item) => item.mesaId !== mesaId) }))
+      set((state) => ({ cocina: state.cocina.filter((item) => item.mesaId !== targetId) }))
     } catch (error) {
       console.error('[AppStore] completeMesaCocina failed:', error)
       throw error
@@ -486,7 +497,9 @@ export const useAppStore = create((set, get) => ({
               precio: pedido.precio,
               status: COCINA_STATUS.PENDIENTE,
               timestamp: new Date().toISOString(),
-              nota: pedido.nota || ''
+              nota: pedido.nota || '',
+              variantLabel: formatVariantLabel(pedido.variantOptions),
+              emoji: pedido.emoji || ''
             })
           }
         }
@@ -496,7 +509,7 @@ export const useAppStore = create((set, get) => ({
       )
 
       for (const order of activeTakeaways) {
-        const mesaKey = order.mesaId ?? `TL-${order.id}`
+        const mesaKey = order.mesaId != null ? order.mesaId : -order.id
         const existingItems = await cocinaRepo.getByMesaId(mesaKey)
         const existingPedidoIds = new Set(existingItems.map((c) => c.pedidoId))
 
@@ -510,7 +523,9 @@ export const useAppStore = create((set, get) => ({
               precio: pedido.precio,
               status: COCINA_STATUS.PENDIENTE,
               timestamp: new Date().toISOString(),
-              nota: pedido.nota || ''
+              nota: pedido.nota || '',
+              variantLabel: formatVariantLabel(pedido.variantOptions),
+              emoji: pedido.emoji || ''
             })
           }
         }
@@ -602,18 +617,22 @@ export const useAppStore = create((set, get) => ({
    * @param {string} tipo - 'carta' | 'menu'
    * @param {string} nota - Optional note
    */
-  addTakeawayItem: async (takeawayId, producto, cantidad = 1, tipo = 'carta', nota = '') => {
+  addTakeawayItem: async (takeawayId, producto, cantidad = 1, tipo = 'carta', nota = '', variantOptions = []) => {
     try {
       const { takeaways } = get()
       const order = takeaways.find((t) => t.id === takeawayId)
       if (!order) throw new Error(`Takeaway order ${takeawayId} not found`)
 
       const pedidos = order.pedidos || []
-      const newItem = createPedidoItem(producto, cantidad, tipo, nota)
+      const normalizedVariants = Array.isArray(variantOptions) ? variantOptions : []
+      const newItem = createPedidoItem(producto, cantidad, tipo, nota, normalizedVariants)
 
       // Check if same productoId already exists
       const existingIdx = pedidos.findIndex(
-        (p) => p.productoId === producto.id && p.categoria === producto.categoria
+        (p) =>
+          p.productoId === producto.id &&
+          p.categoria === producto.categoria &&
+          isSameVariantOptions(p.variantOptions, normalizedVariants)
       )
 
       if (existingIdx >= 0) {

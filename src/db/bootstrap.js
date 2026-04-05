@@ -43,27 +43,28 @@ export async function seedProductos() {
   if (count === 0) {
     const now = new Date()
     const productos = [
-      // Con Arroz
-      { nombre: 'Arroz a la Cubana', precio: 8.50, categoria: 'con_arroz', emoji: '🍚', activo: true, createdAt: now, updatedAt: now },
-      { nombre: 'Paella Valenciana', precio: 12.00, categoria: 'con_arroz', emoji: '🥘', activo: true, createdAt: now, updatedAt: now },
-      // Sin Arroz
-      { nombre: 'Salmón a la Plancha', precio: 12.00, categoria: 'sin_arroz', emoji: '🐟', activo: true, createdAt: now, updatedAt: now },
-      { nombre: 'Pollo Asado', precio: 9.50, categoria: 'sin_arroz', emoji: '🍗', activo: true, createdAt: now, updatedAt: now },
-      // Sopas / Caldos
-      { nombre: 'Sopa de Ajo', precio: 5.50, categoria: 'sopas', emoji: '🍲', activo: true, createdAt: now, updatedAt: now },
-      { nombre: 'Caldo Gallego', precio: 6.00, categoria: 'sopas', emoji: '🥣', activo: true, createdAt: now, updatedAt: now },
-      // Entrantes
-      { nombre: 'Ensalada Mixta', precio: 6.50, categoria: 'entrantes', emoji: '🥗', activo: true, createdAt: now, updatedAt: now },
-      { nombre: 'Tortilla Española', precio: 7.00, categoria: 'entrantes', emoji: '🍳', activo: true, createdAt: now, updatedAt: now },
-      // Postres
-      { nombre: 'Flan de Huevo', precio: 3.50, categoria: 'postres', emoji: '🍮', activo: true, createdAt: now, updatedAt: now },
-      { nombre: 'Tres Leches', precio: 4.00, categoria: 'postres', emoji: '🍰', activo: true, createdAt: now, updatedAt: now },
-      // Bebidas
-      { nombre: 'Agua Mineral', precio: 1.20, categoria: 'bebidas', emoji: '💧', activo: true, createdAt: now, updatedAt: now },
-      { nombre: 'Cerveza Caña', precio: 2.00, categoria: 'bebidas', emoji: '🍺', activo: true, createdAt: now, updatedAt: now },
-      { nombre: 'Vino Tinto Copa', precio: 2.50, categoria: 'bebidas', emoji: '🍷', activo: true, createdAt: now, updatedAt: now },
-      { nombre: 'Café con Leche', precio: 1.50, categoria: 'bebidas', emoji: '☕', activo: true, createdAt: now, updatedAt: now }
-    ]
+      { nombre: 'Arroz a la Cubana', precio: 8.50, categoria: 'con_arroz', emoji: '🍚' },
+      { nombre: 'Paella Valenciana', precio: 12.00, categoria: 'con_arroz', emoji: '🥘' },
+      { nombre: 'Salmón a la Plancha', precio: 12.00, categoria: 'sin_arroz', emoji: '🐟' },
+      { nombre: 'Pollo Asado', precio: 9.50, categoria: 'sin_arroz', emoji: '🍗' },
+      { nombre: 'Sopa de Ajo', precio: 5.50, categoria: 'sopas', emoji: '🍲' },
+      { nombre: 'Caldo Gallego', precio: 6.00, categoria: 'sopas', emoji: '🥣' },
+      { nombre: 'Ensalada Mixta', precio: 6.50, categoria: 'entrantes', emoji: '🥗' },
+      { nombre: 'Tortilla Española', precio: 7.00, categoria: 'entrantes', emoji: '🍳' },
+      { nombre: 'Flan de Huevo', precio: 3.50, categoria: 'postres', emoji: '🍮' },
+      { nombre: 'Tres Leches', precio: 4.00, categoria: 'postres', emoji: '🍰' },
+      { nombre: 'Agua Mineral', precio: 1.20, categoria: 'bebidas', emoji: '💧' },
+      { nombre: 'Cerveza Caña', precio: 2.00, categoria: 'bebidas', emoji: '🍺' },
+      { nombre: 'Vino Tinto Copa', precio: 2.50, categoria: 'bebidas', emoji: '🍷' },
+      { nombre: 'Café con Leche', precio: 1.50, categoria: 'bebidas', emoji: '☕' }
+    ].map((producto) => ({
+      ...producto,
+      activo: true,
+      createdAt: now,
+      updatedAt: now,
+      hasVariants: false,
+      variantGroups: []
+    }))
 
     await db.productos.bulkAdd(productos)
     console.log(`[Bootstrap] Seeded ${productos.length} sample products`)

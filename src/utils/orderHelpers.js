@@ -90,8 +90,9 @@ export function condenseMenuDia(pedidos, menuDelDia) {
  * @param {string} nota - Optional note
  * @returns {Object} PedidoItem with denormalized fields
  */
-export function createPedidoItem(producto, cantidad = 1, tipo = 'carta', nota = '') {
+export function createPedidoItem(producto, cantidad = 1, tipo = 'carta', nota = '', variantOptions = []) {
   const precio = producto.precio || 0
+  const variantLabel = formatVariantLabel(variantOptions)
   return {
     id: crypto.randomUUID(),
     productoId: producto.id,
@@ -103,6 +104,13 @@ export function createPedidoItem(producto, cantidad = 1, tipo = 'carta', nota = 
     nota,
     subtotal: precio * cantidad,
     emoji: producto.emoji || '',
-    status: 'activo'
+    status: 'activo',
+    variantOptions: variantOptions || [],
+    variantLabel
   }
+}
+
+export function formatVariantLabel(variantOptions) {
+  if (!variantOptions || variantOptions.length === 0) return ''
+  return variantOptions.map((opt) => opt.optionLabel).join(' / ')
 }

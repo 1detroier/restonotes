@@ -29,4 +29,15 @@ db.version(3).stores({
   })
 })
 
+// v4: enable product variants metadata
+db.version(4).stores({
+  productos: '++id, nombre, categoria, activo, createdAt, updatedAt'
+}).upgrade(async (tx) => {
+  const table = tx.table('productos')
+  await table.toCollection().modify((producto) => {
+    if (producto.hasVariants === undefined) producto.hasVariants = false
+    if (!producto.variantGroups) producto.variantGroups = []
+  })
+})
+
 export default db

@@ -2,6 +2,12 @@ import { useState, useEffect } from 'react'
 import { useProductoForm } from '../../hooks/useProductoForm'
 import { CATEGORIAS_CARTA, CATEGORIA_LABELS } from '../../utils/constants'
 import EmojiPicker from './EmojiPicker'
+import { normalizeVariantGroups, createVariantOptionId } from '../../utils/variants'
+
+const buildInitialVariants = (producto) => {
+  if (!producto || !producto.variantGroups) return []
+  return normalizeVariantGroups(producto.variantGroups)
+}
 
 export default function ProductoForm({ producto, onSave, onCancel }) {
   const isEdit = !!producto
@@ -11,12 +17,15 @@ export default function ProductoForm({ producto, onSave, onCancel }) {
           nombre: producto.nombre,
           precio: String(producto.precio),
           categoria: producto.categoria,
-          emoji: producto.emoji
+          emoji: producto.emoji,
+          hasVariants: !!producto.hasVariants,
+          variantGroups: buildInitialVariants(producto)
         }
       : undefined
   )
 
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
+  const [variantInputs, setVariantInputs] = useState({})
 
   useEffect(() => {
     if (isEdit && producto) {
@@ -24,7 +33,9 @@ export default function ProductoForm({ producto, onSave, onCancel }) {
         nombre: producto.nombre,
         precio: String(producto.precio),
         categoria: producto.categoria,
-        emoji: producto.emoji
+        emoji: producto.emoji,
+        hasVariants: !!producto.hasVariants,
+        variantGroups: buildInitialVariants(producto)
       })
     }
   }, [isEdit, producto, reset])
@@ -37,8 +48,64 @@ export default function ProductoForm({ producto, onSave, onCancel }) {
       nombre: values.nombre.trim(),
       precio: parseFloat(values.precio),
       categoria: values.categoria,
-      emoji: values.emoji
+      emoji: values.emoji,
+      hasVariants: values.hasVariants,
+      variantGroups: values.hasVariants ? values.variantGroups : []
     })
+  }
+
+  const handleToggleVariants = (checked) => {
+    setField('hasVariants', checked)
+    if (!checked) {
+      setField('variantGroups', [])
+    }
+  }
+
+  const handleAddVariantGroup = () => {
+    const next = [...(values.variantGroups || []), {
+      id: createVariantOptionId(),
+      name: '',
+      required: true,
+      options: []
+    }]
+    setField('variantGroups', next)
+  }
+
+  const handleUpdateGroup = (groupId, updates) => {
+    const next = (values.variantGroups || []).map((group) =>
+      group.id === groupId ? { ...group, ...updates } : group
+    )
+    setField('variantGroups', next)
+  }
+
+  const handleRemoveGroup = (groupId) => {
+    const next = (values.variantGroups || []).filter((group) => group.id !== groupId)
+    setField('variantGroups', next)
+  }
+
+  const handleAddOption = (groupId) => {
+    const label = (variantInputs[groupId] || '').trim()
+    if (!label) return
+    const next = (values.variantGroups || []).map((group) => {
+      if (group.id !== groupId) return group
+      return {
+        ...group,
+        options: [...group.options, { id: createVariantOptionId(), label }]
+      }
+    })
+    setField('variantGroups', next)
+    setVariantInputs((prev) => ({ ...prev, [groupId]: '' }))
+  }
+
+  const handleRemoveOption = (groupId, optionId) => {
+    const next = (values.variantGroups || []).map((group) => {
+      if (group.id !== groupId) return group
+      return {
+        ...group,
+        options: group.options.filter((opt) => opt.id !== optionId)
+      }
+    })
+    setField('variantGroups', next)
   }
 
   return (
@@ -134,6 +201,105 @@ export default function ProductoForm({ producto, onSave, onCancel }) {
               }}
               selected={values.emoji}
             />
+          </div>
+        )}
+      </div>
+
+      {/* Variants */}
+      <div className="border border-base-200 rounded-lg p-4 space-y-3 bg-base-100">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="font-semibold">Variantes</p>
+            <p className="text-xs text-base-content/60">Configura sabores/tamaños desde acá.</p>
+          </div>
+          <label className="label cursor-pointer gap-2">
+            <span className="label-text text-sm">Habilitar</span>
+            <input
+              type="checkbox"
+              className="toggle toggle-primary"
+              checked={values.hasVariants}
+              onChange={(e) => handleToggleVariants(e.target.checked)}
+            />
+          </label>
+        </div>
+
+        {values.hasVariants && (
+          <div className="space-y-3">
+            {(values.variantGroups || []).map((group) => (
+              <div key={group.id} className="border border-base-300 rounded-lg p-3 space-y-2">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={group.name}
+                    onChange={(e) => handleUpdateGroup(group.id, { name: e.target.value })}
+                    placeholder="Nombre del grupo (ej: Sabor)"
+                    className="input input-sm flex-1"
+                  />
+                  <label className="flex items-center gap-1 text-xs">
+                    <input
+                      type="checkbox"
+                      className="checkbox checkbox-xs"
+                      checked={group.required !== false}
+                      onChange={(e) => handleUpdateGroup(group.id, { required: e.target.checked })}
+                    />
+                    Obligatorio
+                  </label>
+                  <button
+                    type="button"
+                    className="btn btn-xs btn-ghost text-error"
+                    onClick={() => handleRemoveGroup(group.id)}
+                    aria-label="Eliminar grupo"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={variantInputs[group.id] || ''}
+                    onChange={(e) => setVariantInputs((prev) => ({ ...prev, [group.id]: e.target.value }))}
+                    placeholder="Nueva opción (ej: Maracuyá)"
+                    className="input input-sm flex-1"
+                  />
+                  <button
+                    type="button"
+                    className="btn btn-sm"
+                    onClick={() => handleAddOption(group.id)}
+                  >
+                    Añadir
+                  </button>
+                </div>
+                {group.options.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {group.options.map((option) => (
+                      <span key={option.id} className="badge badge-outline gap-2">
+                        {option.label}
+                        <button
+                          type="button"
+                          className="text-error"
+                          onClick={() => handleRemoveOption(group.id, option.id)}
+                          aria-label="Eliminar opción"
+                        >
+                          ✕
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+
+            <button
+              type="button"
+              className="btn btn-sm btn-outline"
+              onClick={handleAddVariantGroup}
+            >
+              + Grupo de variantes
+            </button>
+
+            {errors.variantGroups && (
+              <p className="text-error text-xs">{errors.variantGroups}</p>
+            )}
           </div>
         )}
       </div>

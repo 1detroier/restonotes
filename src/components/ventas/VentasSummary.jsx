@@ -96,6 +96,13 @@ export default function VentasSummary({ ventas, fecha, onDelete }) {
                                 {item.nota}
                               </div>
                             )}
+                            {item.variantOptions && item.variantOptions.length > 0 && (
+                              <div className="text-[11px] text-base-content/50 flex flex-wrap gap-1 mt-1">
+                                {item.variantOptions.map((variant) => (
+                                  <span key={`${variant.groupId}-${variant.optionId}`}>{variant.groupName}: {variant.optionLabel}</span>
+                                ))}
+                              </div>
+                            )}
                           </div>
                           <span className={`font-medium ${item.status === 'cancelado' ? 'line-through opacity-60' : ''}`}>
                             {formatPrice((item.precio || 0) * (item.cantidad || 1))}

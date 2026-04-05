@@ -5,7 +5,9 @@ const defaultValues = {
   nombre: '',
   precio: '',
   categoria: '',
-  emoji: ''
+  emoji: '',
+  hasVariants: false,
+  variantGroups: []
 }
 
 function validate(values) {
@@ -28,6 +30,21 @@ function validate(values) {
 
   if (!values.emoji) {
     errors.emoji = 'Selecciona un emoji'
+  }
+
+  if (values.hasVariants) {
+    if (!Array.isArray(values.variantGroups) || values.variantGroups.length === 0) {
+      errors.variantGroups = 'Añade al menos un grupo'
+    } else {
+      values.variantGroups.forEach((group, index) => {
+        if (!group || !group.name || group.name.trim().length < 2) {
+          errors.variantGroups = 'Completa el nombre de cada grupo'
+        }
+        if (!Array.isArray(group.options) || group.options.length === 0) {
+          errors.variantGroups = 'Cada grupo debe tener opciones'
+        }
+      })
+    }
   }
 
   return errors

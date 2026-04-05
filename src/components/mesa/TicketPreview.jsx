@@ -106,6 +106,15 @@ function SwipeableItem({ item, onRemove, onUpdateQty, onCancel, mesaId }) {
             <span className="text-sm font-bold text-primary">{item.cantidad}×</span>
             <span className="text-sm">{item.emoji || ''} {item.nombre}</span>
           </div>
+          {item.variantOptions && item.variantOptions.length > 0 && (
+            <div className="ml-6 mt-1 flex flex-wrap gap-1">
+              {item.variantOptions.map((variant) => (
+                <span key={`${variant.groupId}-${variant.optionId}`} className="badge badge-ghost badge-xs">
+                  {variant.groupName}: {variant.optionLabel}
+                </span>
+              ))}
+            </div>
+          )}
           {/* Menu components shown as sub-items */}
           {isMenu && item.nota && (
             <div className="ml-6 mt-1 space-y-0.5">

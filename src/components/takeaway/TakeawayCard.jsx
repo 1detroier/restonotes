@@ -6,6 +6,7 @@ import ProductQuickAdd from '../mesa/ProductQuickAdd'
 import TicketPreview from '../mesa/TicketPreview'
 import QuantityModal from '../mesa/QuantityModal'
 import MenuSelectionModal from '../mesa/MenuSelectionModal'
+import VariantSelectionModal from '../common/VariantSelectionModal'
 
 /**
  * Single takeaway order card. Tap to open order detail and add items.
@@ -14,6 +15,7 @@ export default function TakeawayCard({ order }) {
   const { productos, menuDelDia, mesas, updateTakeaway, payTakeaway, deleteTakeaway, addTakeawayItem, removeTakeawayItem, updateTakeawayItemQty } = useAppStore()
   const [showDetail, setShowDetail] = useState(false)
   const [qtyProduct, setQtyProduct] = useState(null)
+  const [variantProduct, setVariantProduct] = useState(null)
   const [activeTab, setActiveTab] = useState('carta')
   const [showMenuSelection, setShowMenuSelection] = useState(false)
 
@@ -53,8 +55,19 @@ export default function TakeawayCard({ order }) {
     }
   }
 
-  const handleAddItem = async (producto, cantidad = 1) => {
-    await addTakeawayItem(order.id, producto, cantidad)
+  const requiresVariants = (producto) =>
+    producto?.hasVariants && Array.isArray(producto.variantGroups) && producto.variantGroups.length > 0
+
+  const handleAddItemDirect = async (producto, cantidad = 1, note = '', variantOptions = []) => {
+    await addTakeawayItem(order.id, producto, cantidad, 'carta', note, variantOptions)
+  }
+
+  const handleAddItem = (producto, cantidad = 1) => {
+    if (requiresVariants(producto)) {
+      setVariantProduct({ producto, quantity: cantidad })
+      return
+    }
+    handleAddItemDirect(producto, cantidad)
   }
 
   const handleRemoveItem = async (tempId) => {
@@ -67,7 +80,11 @@ export default function TakeawayCard({ order }) {
 
   const handleQtyConfirm = async (producto, cantidad) => {
     setQtyProduct(null)
-    await handleAddItem(producto, cantidad)
+    if (requiresVariants(producto)) {
+      setVariantProduct({ producto, quantity: cantidad })
+      return
+    }
+    await handleAddItemDirect(producto, cantidad)
   }
 
   const handleMenuConfirm = async (primero, segundo, postre, bebida) => {
@@ -252,7 +269,17 @@ export default function TakeawayCard({ order }) {
                   )}
                 </div>
               ) : (
-                <ProductQuickAdd productos={filteredProductos} onAdd={handleAddItem} onLongPressProduct={setQtyProduct} />
+                <ProductQuickAdd
+                  productos={filteredProductos}
+                  onAdd={handleAddItem}
+                  onLongPressProduct={(producto) => {
+                    if (requiresVariants(producto)) {
+                      setVariantProduct({ producto, quantity: 1 })
+                    } else {
+                      setQtyProduct(producto)
+                    }
+                  }}
+                />
               )}
               {order.pedidos && order.pedidos.length > 0 && (
                 <div className="border-t border-base-200 mt-2">
@@ -280,6 +307,18 @@ export default function TakeawayCard({ order }) {
       {/* Quantity modal */}
       {qtyProduct && (
         <QuantityModal producto={qtyProduct} onConfirm={handleQtyConfirm} onCancel={() => setQtyProduct(null)} />
+      )}
+
+      {variantProduct && (
+        <VariantSelectionModal
+          producto={variantProduct.producto}
+          initialQuantity={variantProduct.quantity || 1}
+          onConfirm={({ variantOptions, quantity, note }) => {
+            setVariantProduct(null)
+            handleAddItemDirect(variantProduct.producto, quantity, note, variantOptions)
+          }}
+          onCancel={() => setVariantProduct(null)}
+        />
       )}
 
       {showMenuSelection && menuDelDia && (

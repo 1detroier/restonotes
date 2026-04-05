@@ -10,7 +10,9 @@ describe('useProductoForm', () => {
       nombre: '',
       precio: '',
       categoria: '',
-      emoji: ''
+      emoji: '',
+      hasVariants: false,
+      variantGroups: []
     })
   })
 
@@ -119,6 +121,24 @@ describe('useProductoForm', () => {
     })
     expect(isValid).toBe(true)
     expect(Object.keys(result.current.errors)).toHaveLength(0)
+  })
+
+  it('validates variant groups when hasVariants is true', () => {
+    const { result } = renderHook(() => useProductoForm())
+
+    act(() => {
+      result.current.setField('nombre', 'Batido')
+      result.current.setField('precio', '5')
+      result.current.setField('categoria', 'bebidas')
+      result.current.setField('emoji', '🥤')
+      result.current.setField('hasVariants', true)
+    })
+
+    act(() => {
+      result.current.validate()
+    })
+
+    expect(result.current.errors.variantGroups).toBe('Añade al menos un grupo')
   })
 
   it('resets to default values', () => {

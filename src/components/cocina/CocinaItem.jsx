@@ -64,6 +64,9 @@ export default function CocinaItem({ item }) {
           <span className="text-sm font-medium truncate">{item.productoNombre}</span>
           <span className="text-sm font-bold text-primary">{item.cantidad}×</span>
         </div>
+        {item.variantLabel && (
+          <p className="text-xs text-base-content/60 ml-7">{item.variantLabel}</p>
+        )}
         {item.nota && (
           <p className="text-xs text-base-content/50 ml-7 italic">({item.nota})</p>
         )}

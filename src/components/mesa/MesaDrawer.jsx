@@ -9,6 +9,7 @@ import CerrarCuentaModal from './CerrarCuentaModal'
 import MenuSelectionModal from './MenuSelectionModal'
 import { groupByCategory, calcTotal, getCancelledCount } from '../../utils/orderHelpers'
 import { formatPrice, formatMinutes } from '../../utils/formatters'
+import VariantSelectionModal from '../common/VariantSelectionModal'
 
 /**
  * Bottom sheet drawer for order management.
@@ -21,6 +22,7 @@ export default function MesaDrawer({ mesaId }) {
   const { closeModal } = useUIStore()
   const [activeTab, setActiveTab] = useState('carta')
   const [qtyProduct, setQtyProduct] = useState(null)
+  const [variantProduct, setVariantProduct] = useState(null)
   const [showCloseConfirm, setShowCloseConfirm] = useState(false)
   const [showMenuSelection, setShowMenuSelection] = useState(false)
   const [showCancelOrder, setShowCancelOrder] = useState(false)
@@ -48,12 +50,23 @@ export default function MesaDrawer({ mesaId }) {
     return true
   })
 
-  const handleAddProduct = async (producto, cantidad = 1) => {
+  const requiresVariants = (producto) =>
+    producto?.hasVariants && Array.isArray(producto.variantGroups) && producto.variantGroups.length > 0
+
+  const handleAddProductDirect = async (producto, cantidad = 1, nota = '', variantOptions = []) => {
     try {
-      await addItemToMesa(mesaId, producto, cantidad)
+      await addItemToMesa(mesaId, producto, cantidad, 'carta', nota, variantOptions)
     } catch (err) {
       console.error('Failed to add item:', err)
     }
+  }
+
+  const handleProductTap = (producto, cantidad = 1) => {
+    if (requiresVariants(producto)) {
+      setVariantProduct({ producto, quantity: cantidad })
+      return
+    }
+    handleAddProductDirect(producto, cantidad)
   }
 
   const handleRemoveItem = async (tempId) => {
@@ -74,7 +87,7 @@ export default function MesaDrawer({ mesaId }) {
 
   const handleQtyConfirm = async (producto, cantidad) => {
     setQtyProduct(null)
-    await handleAddProduct(producto, cantidad)
+    await handleAddProductDirect(producto, cantidad)
   }
 
   const handleCloseCuenta = async (paymentMethod) => {
@@ -222,8 +235,14 @@ export default function MesaDrawer({ mesaId }) {
               /* Carta / Bebidas - product grid grouped by category */
               <ProductQuickAdd
                 productos={filteredProductos}
-                onAdd={handleAddProduct}
-                onLongPressProduct={setQtyProduct}
+                onAdd={handleProductTap}
+                onLongPressProduct={(producto) => {
+                  if (requiresVariants(producto)) {
+                    setVariantProduct({ producto, quantity: 1 })
+                  } else {
+                    setQtyProduct(producto)
+                  }
+                }}
               />
             )}
 
@@ -255,11 +274,22 @@ export default function MesaDrawer({ mesaId }) {
                         <span className="text-xs font-bold text-primary">{formatPrice(order.total || 0)}</span>
                       </div>
                       {order.pedidos && order.pedidos.length > 0 && (
-                        <ul className="text-xs mt-2 text-base-content/70 space-y-1">
+                        <ul className="text-xs mt-2 text-base-content/70 space-y-2">
                           {order.pedidos.map((item) => (
                             <li key={item.id}>
-                              {item.cantidad} × {item.nombre}
-                              {item.nota ? ` (${item.nota})` : ''}
+                              <div>
+                                {item.cantidad} × {item.nombre}
+                                {item.nota ? ` (${item.nota})` : ''}
+                              </div>
+                              {item.variantOptions && item.variantOptions.length > 0 && (
+                                <div className="flex flex-wrap gap-1 mt-1">
+                                  {item.variantOptions.map((variant) => (
+                                    <span key={`${variant.groupId}-${variant.optionId}`} className="badge badge-ghost badge-xs">
+                                      {variant.groupName}: {variant.optionLabel}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
                             </li>
                           ))}
                         </ul>
@@ -303,6 +333,18 @@ export default function MesaDrawer({ mesaId }) {
           producto={qtyProduct}
           onConfirm={handleQtyConfirm}
           onCancel={() => setQtyProduct(null)}
+        />
+      )}
+
+      {variantProduct && (
+        <VariantSelectionModal
+          producto={variantProduct.producto}
+          initialQuantity={variantProduct.quantity || 1}
+          onConfirm={({ variantOptions, quantity, note }) => {
+            setVariantProduct(null)
+            handleAddProductDirect(variantProduct.producto, quantity, note, variantOptions)
+          }}
+          onCancel={() => setVariantProduct(null)}
         />
       )}
 
