@@ -17,12 +17,13 @@ import { formatPrice, formatMinutes } from '../../utils/formatters'
  * @param {number} props.mesaId - Active mesa ID
  */
 export default function MesaDrawer({ mesaId }) {
-  const { mesas, productos, menuDelDia, addItemToMesa, removeItemFromMesa, updateItemQuantity, closeCuenta, cancelItem } = useAppStore()
+  const { mesas, productos, menuDelDia, addItemToMesa, removeItemFromMesa, updateItemQuantity, closeCuenta, cancelItem, loadMesas } = useAppStore()
   const { closeModal } = useUIStore()
   const [activeTab, setActiveTab] = useState('carta')
   const [qtyProduct, setQtyProduct] = useState(null)
   const [showCloseConfirm, setShowCloseConfirm] = useState(false)
   const [showMenuSelection, setShowMenuSelection] = useState(false)
+  const [showCancelOrder, setShowCancelOrder] = useState(false)
 
   const mesa = mesas.find((m) => m.id === mesaId)
   const { minutes, colorState } = useMesaTimer(mesa?.openedAt)
@@ -79,6 +80,19 @@ export default function MesaDrawer({ mesaId }) {
       closeModal()
     } catch (err) {
       console.error('Failed to close cuenta:', err)
+    }
+  }
+
+  const handleCancelOrder = async () => {
+    try {
+      // Reset mesa to libre WITHOUT saving to ventas
+      const { mesaRepo } = await import('../../db/repositories/mesas')
+      await mesaRepo.closeCuenta(mesaId)
+      await loadMesas()
+      setShowCancelOrder(false)
+      closeModal()
+    } catch (err) {
+      console.error('Failed to cancel order:', err)
     }
   }
 
@@ -227,7 +241,13 @@ export default function MesaDrawer({ mesaId }) {
           {pedidos.length > 0 && (
             <div className="sticky bottom-0 bg-base-100 border-t border-base-200 p-3 flex gap-2">
               <button
-                className="btn btn-outline flex-1 min-h-[44px]"
+                className="btn btn-error btn-outline flex-1 min-h-[44px]"
+                onClick={() => setShowCancelOrder(true)}
+              >
+                ✕ Cancelar
+              </button>
+              <button
+                className="btn btn-primary flex-1 min-h-[44px]"
                 onClick={() => setShowCloseConfirm(true)}
               >
                 🧾 Cobrar
@@ -263,6 +283,35 @@ export default function MesaDrawer({ mesaId }) {
           onConfirm={handleCloseCuenta}
           onCancel={() => setShowCloseConfirm(false)}
         />
+      )}
+
+      {/* Cancel order confirmation */}
+      {showCancelOrder && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 p-4" onClick={() => setShowCancelOrder(false)}>
+          <div className="bg-base-100 rounded-2xl p-6 max-w-sm w-full" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-bold mb-2">⚠️ Cancelar Pedido</h3>
+            <p className="text-sm text-base-content/70 mb-4">
+              ¿Estás seguro de cancelar el pedido de la <strong>Mesa #{mesa.numero}</strong>?
+            </p>
+            <p className="text-xs text-error mb-4">
+              Esta acción no guardará la venta en el reporte del día.
+            </p>
+            <div className="flex gap-2">
+              <button
+                className="btn btn-ghost flex-1 min-h-[44px]"
+                onClick={() => setShowCancelOrder(false)}
+              >
+                Volver
+              </button>
+              <button
+                className="btn btn-error flex-1 min-h-[44px]"
+                onClick={handleCancelOrder}
+              >
+                Cancelar Pedido
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </>
   )
