@@ -195,19 +195,24 @@ export const useAppStore = create((set, get) => ({
       const normalizedVariants = Array.isArray(variantOptions) ? variantOptions : []
       const newItem = createPedidoItem(producto, cantidad, tipo, nota, normalizedVariants)
 
-      // Check if same productoId already exists — sum quantities
-      const existingIdx = pedidos.findIndex(
-        (p) =>
-          p.productoId === producto.id &&
-          p.categoria === producto.categoria &&
-          isSameVariantOptions(p.variantOptions, normalizedVariants)
-      )
-
-      if (existingIdx >= 0) {
-        pedidos[existingIdx].cantidad += cantidad
-        pedidos[existingIdx].subtotal = pedidos[existingIdx].precio * pedidos[existingIdx].cantidad
-      } else {
+      // Menus always create a new item since each combination is unique
+      if (tipo === 'menu') {
         pedidos.push(newItem)
+      } else {
+        // Check if same productoId already exists — sum quantities
+        const existingIdx = pedidos.findIndex(
+          (p) =>
+            p.productoId === producto.id &&
+            p.categoria === producto.categoria &&
+            isSameVariantOptions(p.variantOptions, normalizedVariants)
+        )
+
+        if (existingIdx >= 0) {
+          pedidos[existingIdx].cantidad += cantidad
+          pedidos[existingIdx].subtotal = pedidos[existingIdx].precio * pedidos[existingIdx].cantidad
+        } else {
+          pedidos.push(newItem)
+        }
       }
 
       const total = calcTotal(pedidos)
@@ -627,19 +632,24 @@ export const useAppStore = create((set, get) => ({
       const normalizedVariants = Array.isArray(variantOptions) ? variantOptions : []
       const newItem = createPedidoItem(producto, cantidad, tipo, nota, normalizedVariants)
 
-      // Check if same productoId already exists
-      const existingIdx = pedidos.findIndex(
-        (p) =>
-          p.productoId === producto.id &&
-          p.categoria === producto.categoria &&
-          isSameVariantOptions(p.variantOptions, normalizedVariants)
-      )
-
-      if (existingIdx >= 0) {
-        pedidos[existingIdx].cantidad += cantidad
-        pedidos[existingIdx].subtotal = pedidos[existingIdx].precio * pedidos[existingIdx].cantidad
-      } else {
+      // Menus always create a new item since each combination is unique
+      if (tipo === 'menu') {
         pedidos.push(newItem)
+      } else {
+        // Check if same productoId already exists
+        const existingIdx = pedidos.findIndex(
+          (p) =>
+            p.productoId === producto.id &&
+            p.categoria === producto.categoria &&
+            isSameVariantOptions(p.variantOptions, normalizedVariants)
+        )
+
+        if (existingIdx >= 0) {
+          pedidos[existingIdx].cantidad += cantidad
+          pedidos[existingIdx].subtotal = pedidos[existingIdx].precio * pedidos[existingIdx].cantidad
+        } else {
+          pedidos.push(newItem)
+        }
       }
 
       const total = calcTotal(pedidos)
