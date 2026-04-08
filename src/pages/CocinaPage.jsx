@@ -115,12 +115,13 @@ export default function CocinaPage() {
     return () => clearInterval(interval)
   }, [refresh])
 
-  // Split cocina items by status - group by pedidoId for separate notes
+  // Split cocina items by status
+  // Activos: group by mesaId (as it was before)
+  // History: group by pedidoId (separate notes)
   const stats = useMemo(() => {
-    const active = []
-    const completed = []
-    const cancelled = []
-    const noteGroups = new Map() // pedidoId -> group
+    const active = []  // grouped by mesaId
+    const completed = []  // grouped by pedidoId (separate notes)
+    const cancelled = []  // grouped by pedidoId (separate notes)
 
     for (const item of cocina) {
       // Skip old data that doesn't have new statuses
@@ -131,10 +132,31 @@ export default function CocinaPage() {
         continue
       }
 
-      const key = item.pedidoId || `mesa-${item.mesaId}-${item.timestamp}`
-
-      if (item.status === COCINA_STATUS.LISTO || item.status === COCINA_STATUS.CANCELADO) {
-        // Find or create group by pedidoId
+      // For active items, group by mesaId (original behavior)
+      if (item.status === COCINA_STATUS.PENDIENTE || item.status === COCINA_STATUS.PREPARANDO) {
+        let group = active.find((g) => g.mesaId === item.mesaId)
+        
+        if (!group) {
+          group = { 
+            mesaId: item.mesaId, 
+            items: [], 
+            startTime: null 
+          }
+          active.push(group)
+        }
+        
+        group.items.push(item)
+        
+        // Track start time (first 'preparando' timestamp)
+        if (item.status === COCINA_STATUS.PREPARANDO && item.timestamp) {
+          if (!group.startTime || item.timestamp < group.startTime) {
+            group.startTime = item.timestamp
+          }
+        }
+      } 
+      // For completed/cancelled items, group by pedidoId (separate notes for history)
+      else {
+        const key = item.pedidoId || `mesa-${item.mesaId}-${item.timestamp}`
         let group = completed.find((g) => g.pedidoId === key) || cancelled.find((g) => g.pedidoId === key)
         
         if (!group) {
@@ -153,6 +175,7 @@ export default function CocinaPage() {
         }
         
         group.items.push(item)
+        
         // Track start and end times
         if (item.timestamp) {
           if (!group.startTime || item.timestamp < group.startTime) {
@@ -160,29 +183,6 @@ export default function CocinaPage() {
           }
           if (!group.endTime || item.timestamp > group.endTime) {
             group.endTime = item.timestamp
-          }
-        }
-      } else {
-        // Pendiente or Preparando - group by pedidoId
-        let group = active.find((g) => g.pedidoId === key)
-        
-        if (!group) {
-          group = { 
-            pedidoId: key, 
-            mesaId: item.mesaId, 
-            items: [], 
-            startTime: null, 
-            endTime: null 
-          }
-          active.push(group)
-        }
-        
-        group.items.push(item)
-        
-        // Track start time (first 'preparando' timestamp)
-        if (item.status === COCINA_STATUS.PREPARANDO && item.timestamp) {
-          if (!group.startTime || item.timestamp < group.startTime) {
-            group.startTime = item.timestamp
           }
         }
       }
@@ -319,9 +319,9 @@ export default function CocinaPage() {
             </div>
           ) : (
             <>
-              {            stats.active.map((group) => (
+              {stats.active.map((group) => (
                 <CocinaQueue
-                  key={group.pedidoId}
+                  key={group.mesaId}
                   items={group.items}
                   onCompleteMesa={completeMesaCocina}
                   onStartPreparing={startPreparingMesa}
