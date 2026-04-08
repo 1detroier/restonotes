@@ -30,7 +30,7 @@ export const TABS = {
 /** Kitchen item status values */
 export const COCINA_STATUS = {
   PENDIENTE: 'pendiente',
-  EN_CURSO: 'en_curso',
+  PREPARANDO: 'preparando',
   LISTO: 'listo',
   CANCELADO: 'cancelado'
 }
@@ -38,8 +38,8 @@ export const COCINA_STATUS = {
 /** Kitchen status → daisyUI badge color mapping */
 export const COCINA_STATUS_COLORS = {
   pendiente: 'warning',
-  en_curso: 'info',
-  listo: 'success',
+  preparando: 'success',
+  listo: 'ghost',
   cancelado: 'error'
 }
 

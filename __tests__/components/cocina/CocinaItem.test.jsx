@@ -35,10 +35,10 @@ describe('CocinaItem', () => {
     expect(screen.getByText('Pendiente')).toBeInTheDocument()
   })
 
-  it('displays en_curso status correctly', () => {
-    const item = { ...mockItem, status: 'en_curso' }
+  it('displays preparing status correctly', () => {
+    const item = { ...mockItem, status: 'preparando' }
     render(<CocinaItem item={item} />)
-    expect(screen.getByText('En curso')).toBeInTheDocument()
+    expect(screen.getByText('Preparando')).toBeInTheDocument()
   })
 
   it('displays listo status correctly', () => {

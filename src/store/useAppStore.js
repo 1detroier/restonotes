@@ -424,60 +424,95 @@ export const useAppStore = create((set, get) => ({
 
   // ============ Cocina (Kitchen) ============
 
-  /**
-   * Load pending cocina items into store.
-   */
-  loadCocina: async () => {
-    try {
-      const cocina = await cocinaRepo.getPending()
-      set({ cocina })
-    } catch (error) {
-      console.error('[AppStore] loadCocina failed:', error)
-    }
-  },
+/**
+    * Load ALL cocina items into store (including completed and cancelled).
+    */
+   loadCocina: async () => {
+     try {
+       const cocina = await cocinaRepo.getAll()
+       set({ cocina })
+     } catch (error) {
+       console.error('[AppStore] loadCocina failed:', error)
+     }
+   },
 
-  /**
-   * Advance a cocina item's status: pendiente → en_curso → listo.
-   * @param {number} cocinaId - Cocina item ID
-   */
-  advanceCocinaStatus: async (cocinaId) => {
-    try {
-      const { cocina } = get()
-      const item = cocina.find((c) => c.id === cocinaId)
-      if (!item) return
+/**
+    * Advance a cocina item's status: pendiente → preparando → listo.
+    * Items marked as 'listo' stay in the list (moved to completed section).
+    * @param {number} cocinaId - Cocina item ID
+    */
+   advanceCocinaStatus: async (cocinaId) => {
+     try {
+       const { cocina } = get()
+       const item = cocina.find((c) => c.id === cocinaId)
+       if (!item) return
 
-      const statusFlow = [COCINA_STATUS.PENDIENTE, COCINA_STATUS.EN_CURSO, COCINA_STATUS.LISTO]
-      const currentIdx = statusFlow.indexOf(item.status)
-      if (currentIdx < statusFlow.length - 1) {
-        const newStatus = statusFlow[currentIdx + 1]
-        await cocinaRepo.updateStatus(cocinaId, newStatus)
-        // Remove 'listo' items from local state (they auto-hide)
-        if (newStatus === COCINA_STATUS.LISTO) {
-          set((state) => ({
-            cocina: state.cocina.filter((c) => c.id !== cocinaId)
-          }))
-        } else {
-          await get().loadCocina()
-        }
-      }
-    } catch (error) {
-      console.error('[AppStore] advanceCocinaStatus failed:', error)
-    }
-  },
+       const statusFlow = [COCINA_STATUS.PENDIENTE, COCINA_STATUS.PREPARANDO, COCINA_STATUS.LISTO]
+       const currentIdx = statusFlow.indexOf(item.status)
+       if (currentIdx < statusFlow.length - 1) {
+         const newStatus = statusFlow[currentIdx + 1]
+         await cocinaRepo.updateStatus(cocinaId, newStatus)
+         // Reload all cocina items (including completed ones stay visible)
+         await get().loadCocina()
+       }
+     } catch (error) {
+       console.error('[AppStore] advanceCocinaStatus failed:', error)
+     }
+   },
 
-  completeMesaCocina: async (mesaId) => {
-    try {
-      const targetId = typeof mesaId === 'string' ? Number(mesaId) : mesaId
-      const mesaItems = await cocinaRepo.getByMesaId(targetId)
-      await Promise.all(
-        mesaItems.map((item) => cocinaRepo.updateStatus(item.id, COCINA_STATUS.LISTO))
-      )
-      set((state) => ({ cocina: state.cocina.filter((item) => item.mesaId !== targetId) }))
-    } catch (error) {
-      console.error('[AppStore] completeMesaCocina failed:', error)
-      throw error
-    }
-  },
+   /**
+    * Mark all items from a mesa as 'preparando'.
+    * @param {number} mesaId - Mesa ID
+    */
+   startPreparingMesa: async (mesaId) => {
+     try {
+       const targetId = typeof mesaId === 'string' ? Number(mesaId) : mesaId
+       const mesaItems = await cocinaRepo.getByMesaId(targetId)
+       await Promise.all(
+         mesaItems
+           .filter((item) => item.status === COCINA_STATUS.PENDIENTE)
+           .map((item) => cocinaRepo.updateStatus(item.id, COCINA_STATUS.PREPARANDO))
+       )
+       await get().loadCocina()
+     } catch (error) {
+       console.error('[AppStore] startPreparingMesa failed:', error)
+       throw error
+     }
+   },
+
+   completeMesaCocina: async (mesaId) => {
+     try {
+       const targetId = typeof mesaId === 'string' ? Number(mesaId) : mesaId
+       const mesaItems = await cocinaRepo.getByMesaId(targetId)
+       // Only mark NOT-canceled items as 'listo'
+       await Promise.all(
+         mesaItems
+           .filter((item) => item.status !== COCINA_STATUS.CANCELADO)
+           .map((item) => cocinaRepo.updateStatus(item.id, COCINA_STATUS.LISTO))
+       )
+       // Reload all (completed stay visible in history)
+       await get().loadCocina()
+     } catch (error) {
+       console.error('[AppStore] completeMesaCocina failed:', error)
+       throw error
+     }
+   },
+
+   cancelMesaCocina: async (mesaId) => {
+     try {
+       const targetId = typeof mesaId === 'string' ? Number(mesaId) : mesaId
+       const mesaItems = await cocinaRepo.getByMesaId(targetId)
+       await Promise.all(
+         mesaItems
+           .filter((item) => item.status !== COCINA_STATUS.LISTO)
+           .map((item) => cocinaRepo.updateStatus(item.id, COCINA_STATUS.CANCELADO))
+       )
+       await get().loadCocina()
+     } catch (error) {
+       console.error('[AppStore] cancelMesaCocina failed:', error)
+       throw error
+     }
+   },
 
   /**
    * Sync cocina table with current occupied mesas' pedidos.

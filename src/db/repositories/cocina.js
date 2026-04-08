@@ -24,16 +24,17 @@ export const cocinaRepo = {
     await db.cocina.update(id, { status })
   },
 
-  /**
-   * Get all pending items (pendiente or en_curso).
-   * @returns {Promise<Array>} Cocina items sorted by timestamp ascending
-   */
-  getPending: async () => {
-    const items = await db.cocina.toArray()
-    return items
-      .filter((item) => item.status === 'pendiente' || item.status === 'en_curso')
-      .sort((a, b) => a.timestamp.localeCompare(b.timestamp))
-  },
+   /**
+    * Get all pending items (pendiente or preparando).
+    * Note: Now we get ALL items and filter in the store for display.
+    * @returns {Promise<Array>} Cocina items sorted by timestamp ascending
+    */
+   getPending: async () => {
+     const items = await db.cocina.toArray()
+     return items
+       .filter((item) => item.status === 'pendiente' || item.status === 'preparando')
+       .sort((a, b) => a.timestamp.localeCompare(b.timestamp))
+   },
 
   /**
    * Get all cocina items.

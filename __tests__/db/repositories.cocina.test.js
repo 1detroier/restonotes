@@ -8,7 +8,7 @@ describe('cocinaRepo', () => {
     // Seed cocina items
     await db.cocina.bulkAdd([
       { id: 1, mesaId: 3, pedidoId: 'a', productoNombre: 'Café', cantidad: 2, precio: 1.5, status: 'pendiente', timestamp: '2026-04-05T10:00:00Z', nota: '' },
-      { id: 2, mesaId: 3, pedidoId: 'b', productoNombre: 'Ensalada', cantidad: 1, precio: 8, status: 'en_curso', timestamp: '2026-04-05T10:05:00Z', nota: 'Sin cebolla' },
+      { id: 2, mesaId: 3, pedidoId: 'b', productoNombre: 'Ensalada', cantidad: 1, precio: 8, status: 'preparando', timestamp: '2026-04-05T10:05:00Z', nota: 'Sin cebolla' },
       { id: 3, mesaId: 7, pedidoId: 'c', productoNombre: 'Tarta', cantidad: 1, precio: 6, status: 'listo', timestamp: '2026-04-05T09:00:00Z', nota: '' },
       { id: 4, mesaId: 7, pedidoId: 'd', productoNombre: 'Sopa', cantidad: 1, precio: 5, status: 'pendiente', timestamp: '2026-04-05T10:10:00Z', nota: '' }
     ])
@@ -38,13 +38,13 @@ describe('cocinaRepo', () => {
   })
 
   describe('updateStatus', () => {
-    it('updates status from pendiente to en_curso', async () => {
-      await cocinaRepo.updateStatus(1, 'en_curso')
+    it('updates status from pendiente to preparando', async () => {
+      await cocinaRepo.updateStatus(1, 'preparando')
       const item = await db.cocina.get(1)
-      expect(item.status).toBe('en_curso')
+      expect(item.status).toBe('preparando')
     })
 
-    it('updates status from en_curso to listo', async () => {
+    it('updates status from preparando to listo', async () => {
       await cocinaRepo.updateStatus(2, 'listo')
       const item = await db.cocina.get(2)
       expect(item.status).toBe('listo')
@@ -52,10 +52,10 @@ describe('cocinaRepo', () => {
   })
 
   describe('getPending', () => {
-    it('returns only pendiente and en_curso items', async () => {
+    it('returns only pendiente and preparando items', async () => {
       const items = await cocinaRepo.getPending()
       expect(items).toHaveLength(3)
-      expect(items.every((i) => i.status === 'pendiente' || i.status === 'en_curso')).toBe(true)
+      expect(items.every((i) => i.status === 'pendiente' || i.status === 'preparando')).toBe(true)
     })
 
     it('sorts by timestamp ascending', async () => {

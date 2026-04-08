@@ -15,7 +15,7 @@ export default function CocinaItem({ item }) {
 
   const statusLabels = {
     pendiente: 'Pendiente',
-    en_curso: 'En curso',
+    preparando: 'Preparando',
     listo: 'Listo',
     cancelado: 'Cancelado'
   }
