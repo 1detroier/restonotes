@@ -154,14 +154,18 @@ export default function CocinaPage() {
           }
         }
       } 
-      // For completed/cancelled items, group by pedidoId (separate notes for history)
+      // For completed/cancelled items, group by mesaId + creation time (same "note" = same minute)
       else {
-        const key = item.pedidoId || `mesa-${item.mesaId}-${item.timestamp}`
-        let group = completed.find((g) => g.pedidoId === key) || cancelled.find((g) => g.pedidoId === key)
+        // Group items that were created around the same time as the same "note"
+        // Use mesaId + first 16 chars of timestamp (to the minute) as key
+        const timestampMinute = item.timestamp ? item.timestamp.substring(0, 16) : ''
+        const key = `${item.mesaId}-${timestampMinute}`
+        
+        let group = completed.find((g) => g.groupKey === key) || cancelled.find((g) => g.groupKey === key)
         
         if (!group) {
           group = { 
-            pedidoId: key, 
+            groupKey: key,
             mesaId: item.mesaId, 
             items: [], 
             startTime: null, 
@@ -340,7 +344,7 @@ export default function CocinaPage() {
                 <div className="space-y-2">
                   {filteredStats.cancelled.map((group) => (
                     <button
-                      key={`cancelled-${group.pedidoId}`}
+                      key={`cancelled-${group.groupKey}`}
                       type="button"
                       className="w-full text-left bg-red-50 hover:bg-red-100 rounded-lg p-3 transition-colors"
                       onClick={() => handleGroupClick(group, 'cancelled')}
@@ -372,7 +376,7 @@ export default function CocinaPage() {
                 <div className="space-y-2">
                   {filteredStats.completed.map((group) => (
                     <button
-                      key={`completed-${group.pedidoId}`}
+                      key={`completed-${group.groupKey}`}
                       type="button"
                       className="w-full text-left bg-gray-100 hover:bg-gray-200 rounded-lg p-3 transition-colors"
                       onClick={() => handleGroupClick(group, 'completed')}
