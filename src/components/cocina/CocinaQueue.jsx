@@ -15,14 +15,14 @@ export default function CocinaQueue({ items, onCompleteMesa, onStartPreparing, o
   const hasListo = items.some((i) => i.status === COCINA_STATUS.LISTO)
   const hasCancelado = items.some((i) => i.status === COCINA_STATUS.CANCELADO)
 
-  // Sidebar color based on status
+  // Sidebar color based on status (pastel colors)
   let sidebarColor = ''
   if (hasCancelado && !hasListo) {
-    sidebarColor = 'bg-error'
+    sidebarColor = 'border-l-8 bg-red-200' // pastel red
   } else if (hasPreparando) {
-    sidebarColor = 'bg-success'
+    sidebarColor = 'border-l-8 bg-green-200' // pastel green
   } else if (hasListo) {
-    sidebarColor = 'bg-base-300'
+    sidebarColor = 'border-l-8 bg-gray-200' // pastel gray
   }
 
   // Group items by mesaId (items is already a single group)
@@ -35,7 +35,7 @@ export default function CocinaQueue({ items, onCompleteMesa, onStartPreparing, o
   const sortedItems = items.sort((a, b) => a.timestamp.localeCompare(b.timestamp))
 
   return (
-    <div className={`bg-base-200 rounded-lg overflow-hidden ${sidebarColor ? 'border-l-4 ' + sidebarColor : ''}`}>
+    <div className={`bg-base-200 rounded-lg overflow-hidden ${sidebarColor}`}>
       <div className="p-3">
         <div className="flex justify-between items-center mb-2">
           <h3 className="text-sm font-bold text-base-content/70 uppercase tracking-wide">
@@ -46,7 +46,7 @@ export default function CocinaQueue({ items, onCompleteMesa, onStartPreparing, o
             {onCancelMesa && !hasListo && !hasCancelado && (
               <button
                 type="button"
-                className="btn btn-xs btn-error btn-outline"
+                className="btn btn-xs bg-gray-300 hover:bg-gray-400 text-black border-none"
                 onClick={() => {
                   if (window.confirm('¿Cancelar todos los pedidos de esta nota?')) {
                     onCancelMesa(targetMesaId)
@@ -72,7 +72,7 @@ export default function CocinaQueue({ items, onCompleteMesa, onStartPreparing, o
             {onCompleteMesa && hasPreparando && !hasListo && (
               <button
                 type="button"
-                className="btn btn-xs btn-primary"
+                className="btn btn-xs bg-amber-700 hover:bg-amber-800 text-white border-none"
                 onClick={() => onCompleteMesa(targetMesaId)}
               >
                 Completar
