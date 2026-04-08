@@ -9,13 +9,12 @@ import { COCINA_STATUS } from '../utils/constants'
 function HistoryModal({ isOpen, onClose, group }) {
   if (!isOpen || !group) return null
 
-  // Calculate duration
-  const preparingTime = group.items.find((i) => i.status === COCINA_STATUS.PREPARANDO)?.timestamp
-  const finalTime = group.items.find((i) => i.status === COCINA_STATUS.LISTO || i.status === COCINA_STATUS.CANCELADO)?.timestamp
+  // Calculate duration using group startTime and endTime
+  const { startTime, endTime } = group
   
   let duration = '-'
-  if (preparingTime && finalTime) {
-    const diffMs = new Date(finalTime) - new Date(preparingTime)
+  if (startTime && endTime) {
+    const diffMs = new Date(endTime) - new Date(startTime)
     const diffMins = Math.floor(diffMs / 60000)
     if (diffMins < 60) {
       duration = `${diffMins}m`
@@ -30,6 +29,12 @@ function HistoryModal({ isOpen, onClose, group }) {
   const formatTime = (ts) => {
     if (!ts) return '-'
     return new Date(ts).toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit' })
+  }
+
+  // Format date
+  const formatDate = (ts) => {
+    if (!ts) return '-'
+    return new Date(ts).toLocaleDateString('es-EC', { day: '2-digit', month: 'short', year: 'numeric' })
   }
 
   return (
@@ -48,6 +53,9 @@ function HistoryModal({ isOpen, onClose, group }) {
             <h3 className="text-lg font-bold">Mesa #{group.mesaId}</h3>
             <p className="text-sm text-base-content/60">
               {group.type === 'completed' ? 'Completada' : 'Cancelada'} • {duration}
+            </p>
+            <p className="text-xs text-base-content/50 mt-1">
+              {formatDate(startTime)} • {formatTime(startTime)} → {formatTime(endTime)}
             </p>
           </div>
           <button
@@ -107,11 +115,12 @@ export default function CocinaPage() {
     return () => clearInterval(interval)
   }, [refresh])
 
-  // Split cocina items by status
+  // Split cocina items by status - group by pedidoId for separate notes
   const stats = useMemo(() => {
     const active = []
     const completed = []
     const cancelled = []
+    const noteGroups = new Map() // pedidoId -> group
 
     for (const item of cocina) {
       // Skip old data that doesn't have new statuses
@@ -122,28 +131,60 @@ export default function CocinaPage() {
         continue
       }
 
+      const key = item.pedidoId || `mesa-${item.mesaId}-${item.timestamp}`
+
       if (item.status === COCINA_STATUS.LISTO || item.status === COCINA_STATUS.CANCELADO) {
-        const existingGroup = completed.find((g) => g.mesaId === item.mesaId) || cancelled.find((g) => g.mesaId === item.mesaId)
-        if (item.status === COCINA_STATUS.LISTO) {
-          if (!completed.find((g) => g.mesaId === item.mesaId)) {
-            completed.push({ mesaId: item.mesaId, items: [], timestamp: item.timestamp })
+        // Find or create group by pedidoId
+        let group = completed.find((g) => g.pedidoId === key) || cancelled.find((g) => g.pedidoId === key)
+        
+        if (!group) {
+          group = { 
+            pedidoId: key, 
+            mesaId: item.mesaId, 
+            items: [], 
+            startTime: null, 
+            endTime: null 
           }
-          const group = completed.find((g) => g.mesaId === item.mesaId)
-          group.items.push(item)
-        } else {
-          if (!cancelled.find((g) => g.mesaId === item.mesaId)) {
-            cancelled.push({ mesaId: item.mesaId, items: [], timestamp: item.timestamp })
+          if (item.status === COCINA_STATUS.LISTO) {
+            completed.push(group)
+          } else {
+            cancelled.push(group)
           }
-          const group = cancelled.find((g) => g.mesaId === item.mesaId)
-          group.items.push(item)
+        }
+        
+        group.items.push(item)
+        // Track start and end times
+        if (item.timestamp) {
+          if (!group.startTime || item.timestamp < group.startTime) {
+            group.startTime = item.timestamp
+          }
+          if (!group.endTime || item.timestamp > group.endTime) {
+            group.endTime = item.timestamp
+          }
         }
       } else {
-        // Pendiente or Preparando - check if any in group
-        if (!active.find((g) => g.mesaId === item.mesaId)) {
-          active.push({ mesaId: item.mesaId, items: [], timestamp: item.timestamp })
+        // Pendiente or Preparando - group by pedidoId
+        let group = active.find((g) => g.pedidoId === key)
+        
+        if (!group) {
+          group = { 
+            pedidoId: key, 
+            mesaId: item.mesaId, 
+            items: [], 
+            startTime: null, 
+            endTime: null 
+          }
+          active.push(group)
         }
-        const group = active.find((g) => g.mesaId === item.mesaId)
+        
         group.items.push(item)
+        
+        // Track start time (first 'preparando' timestamp)
+        if (item.status === COCINA_STATUS.PREPARANDO && item.timestamp) {
+          if (!group.startTime || item.timestamp < group.startTime) {
+            group.startTime = item.timestamp
+          }
+        }
       }
     }
 
@@ -154,7 +195,11 @@ export default function CocinaPage() {
       return aTime.localeCompare(bTime)
     })
 
-    return { active, completed: completed.sort((a, b) => b.mesaId - a.mesaId), cancelled: cancelled.sort((a, b) => b.mesaId - a.mesaId) }
+    // Sort completed and cancelled by end time (newest first)
+    completed.sort((a, b) => (b.endTime || '').localeCompare(a.endTime || ''))
+    cancelled.sort((a, b) => (b.endTime || '').localeCompare(a.endTime || ''))
+
+    return { active, completed, cancelled }
   }, [cocina])
 
   // Filter history by date
@@ -162,31 +207,32 @@ export default function CocinaPage() {
     if (!showHistory) return stats
     
     const dateStr = selectedDate
-    const filteredCompleted = stats.completed.filter((g) => {
-      const itemDate = g.items[0]?.timestamp?.substring(0, 10)
-      return itemDate === dateStr
-    })
-    const filteredCancelled = stats.cancelled.filter((g) => {
-      const itemDate = g.items[0]?.timestamp?.substring(0, 10)
-      return itemDate === dateStr
-    })
-    return { ...stats, completed: filteredCompleted, cancelled: filteredCancelled }
+    const filterByDate = (group) => {
+      // Use endTime for completed/cancelled (the completion/cancellation date)
+      const dateToCheck = group.endTime || group.items[0]?.timestamp
+      return dateToCheck?.substring(0, 10) === dateStr
+    }
+    
+    return { 
+      ...stats, 
+      completed: stats.completed.filter(filterByDate), 
+      cancelled: stats.cancelled.filter(filterByDate) 
+    }
   }, [stats, showHistory, selectedDate])
 
   const pendingCount = stats.active.flatMap((g) => g.items).filter((i) => i.status === COCINA_STATUS.PENDIENTE).length
   const preparingCount = stats.active.flatMap((g) => g.items).filter((i) => i.status === COCINA_STATUS.PREPARANDO).length
-  const completedCount = filteredStats.completed.flatMap((g) => g.items).length
-  const cancelledCount = filteredStats.cancelled.flatMap((g) => g.items).length
+  const completedCount = filteredStats.completed.length
+  const cancelledCount = filteredStats.cancelled.length
 
-  // Calculate duration between first 'preparando' and 'listo'/'cancelado'
+  // Calculate duration between startTime and endTime
   const calculateDuration = (group) => {
-    const preparandoTime = group.items.find((i) => i.status === COCINA_STATUS.PREPARANDO)?.timestamp
-    const finalTime = group.items.find((i) => i.status === COCINA_STATUS.LISTO || i.status === COCINA_STATUS.CANCELADO)?.timestamp
+    const { startTime, endTime } = group
     
-    if (!preparandoTime || !finalTime) return '-'
+    if (!startTime || !endTime) return '-'
     
-    const start = new Date(preparandoTime)
-    const end = new Date(finalTime)
+    const start = new Date(startTime)
+    const end = new Date(endTime)
     const diffMs = end - start
     const diffMins = Math.floor(diffMs / 60000)
     
@@ -194,6 +240,16 @@ export default function CocinaPage() {
     const hours = Math.floor(diffMins / 60)
     const mins = diffMins % 60
     return `${hours}h ${mins}m`
+  }
+
+  // Format time for display (start - end)
+  const formatTimeRange = (group) => {
+    const { startTime, endTime } = group
+    if (!startTime || !endTime) return '-'
+    
+    const start = new Date(startTime).toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit' })
+    const end = new Date(endTime).toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit' })
+    return `${start} → ${end}`
   }
 
   // Format date for display
@@ -263,9 +319,9 @@ export default function CocinaPage() {
             </div>
           ) : (
             <>
-              {stats.active.map((group) => (
+              {            stats.active.map((group) => (
                 <CocinaQueue
-                  key={group.mesaId}
+                  key={group.pedidoId}
                   items={group.items}
                   onCompleteMesa={completeMesaCocina}
                   onStartPreparing={startPreparingMesa}
@@ -275,48 +331,16 @@ export default function CocinaPage() {
             </>
           )
         ) : (
-          // History view: completed + cancelled items
+          // History view: cancelled first, then completed
           <div className="space-y-4">
-            {/* Completed section */}
-            {filteredStats.completed.length > 0 && (
-              <div>
-                <h2 className="text-sm font-bold text-base-content/60 uppercase mb-2">Completadas ({completedCount})</h2>
-                <div className="space-y-2">
-                  {filteredStats.completed.map((group) => (
-                    <button
-                      key={`completed-${group.mesaId}`}
-                      type="button"
-                      className="w-full text-left bg-gray-100 hover:bg-gray-200 rounded-lg p-3 transition-colors"
-                      onClick={() => handleGroupClick(group, 'completed')}
-                    >
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <span className="font-bold">Mesa #{group.mesaId}</span>
-                          <span className="text-sm text-base-content/60 ml-2">
-                            {formatDate(group.items[0]?.timestamp)}
-                          </span>
-                        </div>
-                        <div className="text-sm text-base-content/70">
-                          {calculateDuration(group)}
-                        </div>
-                      </div>
-                      <div className="text-xs text-base-content/50 mt-1">
-                        {group.items.length} item{group.items.length !== 1 ? 's' : ''}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Cancelled section */}
+            {/* Cancelled section - first since there should be fewer */}
             {filteredStats.cancelled.length > 0 && (
-              <div className="mt-4">
+              <div>
                 <h2 className="text-sm font-bold text-error/70 uppercase mb-2">Canceladas ({cancelledCount})</h2>
                 <div className="space-y-2">
                   {filteredStats.cancelled.map((group) => (
                     <button
-                      key={`cancelled-${group.mesaId}`}
+                      key={`cancelled-${group.pedidoId}`}
                       type="button"
                       className="w-full text-left bg-red-50 hover:bg-red-100 rounded-lg p-3 transition-colors"
                       onClick={() => handleGroupClick(group, 'cancelled')}
@@ -325,7 +349,39 @@ export default function CocinaPage() {
                         <div>
                           <span className="font-bold">Mesa #{group.mesaId}</span>
                           <span className="text-sm text-base-content/60 ml-2">
-                            {formatDate(group.items[0]?.timestamp)}
+                            {formatDate(group.endTime)}
+                          </span>
+                        </div>
+                        <div className="text-sm font-medium text-error/80">
+                          {calculateDuration(group)}
+                        </div>
+                      </div>
+                      <div className="text-xs text-base-content/50 mt-1">
+                        {formatTimeRange(group)} • {group.items.length} item{group.items.length !== 1 ? 's' : ''}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Completed section */}
+            {filteredStats.completed.length > 0 && (
+              <div className={filteredStats.cancelled.length > 0 ? 'mt-4' : ''}>
+                <h2 className="text-sm font-bold text-base-content/60 uppercase mb-2">Completadas ({completedCount})</h2>
+                <div className="space-y-2">
+                  {filteredStats.completed.map((group) => (
+                    <button
+                      key={`completed-${group.pedidoId}`}
+                      type="button"
+                      className="w-full text-left bg-gray-100 hover:bg-gray-200 rounded-lg p-3 transition-colors"
+                      onClick={() => handleGroupClick(group, 'completed')}
+                    >
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <span className="font-bold">Mesa #{group.mesaId}</span>
+                          <span className="text-sm text-base-content/60 ml-2">
+                            {formatDate(group.endTime)}
                           </span>
                         </div>
                         <div className="text-sm text-base-content/70">
@@ -333,7 +389,7 @@ export default function CocinaPage() {
                         </div>
                       </div>
                       <div className="text-xs text-base-content/50 mt-1">
-                        {group.items.length} item{group.items.length !== 1 ? 's' : ''}
+                        {formatTimeRange(group)} • {group.items.length} item{group.items.length !== 1 ? 's' : ''}
                       </div>
                     </button>
                   ))}
