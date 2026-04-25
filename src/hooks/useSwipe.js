@@ -13,11 +13,13 @@ export function useSwipe(onSwipeLeft, threshold = SWIPE_THRESHOLD) {
   const startX = useRef(0)
   const currentX = useRef(0)
   const isSwipingRef = useRef(false)
+  const hasHandledRef = useRef(false)
 
   const handleStart = useCallback((clientX) => {
     startX.current = clientX
     currentX.current = clientX
     isSwipingRef.current = true
+    hasHandledRef.current = false
     setIsSwiping(true)
     setTranslateX(0)
   }, [])
@@ -33,17 +35,22 @@ export function useSwipe(onSwipeLeft, threshold = SWIPE_THRESHOLD) {
   }, [])
 
   const handleEnd = useCallback(() => {
-    if (!isSwipingRef.current) return
+    if (!isSwipingRef.current || hasHandledRef.current) return
+    
+    hasHandledRef.current = true
+    
+    const diff = currentX.current - startX.current
+    const shouldDelete = diff < -threshold
+    
+    // Reset state first
     isSwipingRef.current = false
     setIsSwiping(false)
+    setTranslateX(0)
 
-    // Use functional update to get latest translateX
-    setTranslateX((prev) => {
-      if (prev < -threshold) {
-        onSwipeLeft?.()
-      }
-      return 0
-    })
+    // Then execute callback if threshold exceeded
+    if (shouldDelete) {
+      onSwipeLeft?.()
+    }
   }, [threshold, onSwipeLeft])
 
   return {
