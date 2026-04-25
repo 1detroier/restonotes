@@ -51,6 +51,10 @@ describe('TicketPreview', () => {
     fireEvent.touchMove(firstItem, { touches: [{ clientX: 100 }] })
     fireEvent.touchEnd(firstItem)
 
+    // Swipe triggers confirmation modal - click the confirm button in the modal (not the swipe background)
+    const deleteBtn = screen.getByRole('button', { name: /eliminar/i })
+    fireEvent.click(deleteBtn)
+
     expect(onRemove).toHaveBeenCalledWith('a')
   })
 

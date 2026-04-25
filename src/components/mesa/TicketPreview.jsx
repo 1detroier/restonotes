@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useSwipe } from '../../hooks/useSwipe'
 import { groupByCategory, calcTotal, getCancelledCount } from '../../utils/orderHelpers'
 import { formatPrice } from '../../utils/formatters'
@@ -74,23 +75,51 @@ export default function TicketPreview({ pedidos, onRemove, onUpdateQty, onCancel
  * Individual ticket item with swipe-to-delete, +/- quantity controls, and cancel button.
  */
 function SwipeableItem({ item, onRemove, onUpdateQty, onCancel, mesaId }) {
-  const handleSwipeConfirm = (onSwipeLeft) => {
-    if (window.confirm(`¿Eliminar ${item.nombre} del pedido?`)) {
-      onSwipeLeft()
-    }
-  }
-  const swipe = useSwipe(onRemove, SWIPE_THRESHOLD, handleSwipeConfirm)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const swipe = useSwipe(
+    () => setShowDeleteConfirm(true),
+    SWIPE_THRESHOLD
+  )
   const isMenu = item.categoria === 'menu'
   const isCancelled = item.status === 'cancelado'
 
+  const handleDeleteConfirm = () => {
+    setShowDeleteConfirm(false)
+    onRemove?.(item.id)
+  }
+
   const handleCancel = () => {
-    if (window.confirm(`¿Cancelar ${item.nombre}?`)) {
-      onCancel?.(mesaId, item.id)
-    }
+    onCancel?.(mesaId, item.id)
   }
 
   return (
-    <div className="relative overflow-hidden">
+    <>
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+          <div className="bg-base-100 p-6 rounded-xl max-w-sm w-full mx-4 shadow-xl">
+            <h3 className="text-lg font-bold text-center mb-2">¿Eliminar item?</h3>
+            <p className="text-sm text-base-content/70 text-center mb-6">
+              ¿Eliminar <strong>{item.nombre}</strong> del pedido?
+            </p>
+            <div className="flex gap-3">
+              <button
+                className="btn btn-ghost flex-1"
+                onClick={() => setShowDeleteConfirm(false)}
+              >
+                Cancelar
+              </button>
+              <button
+                className="btn btn-error flex-1"
+                onClick={handleDeleteConfirm}
+              >
+                Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="relative overflow-hidden">
       {/* Delete background */}
       <div className="absolute inset-0 bg-error flex items-center justify-end pr-4">
         <span className="text-white text-sm font-medium">Eliminar</span>
@@ -174,5 +203,6 @@ function SwipeableItem({ item, onRemove, onUpdateQty, onCancel, mesaId }) {
         </div>
       </div>
     </div>
+    </>
   )
 }

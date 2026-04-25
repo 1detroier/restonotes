@@ -5,10 +5,9 @@ import { SWIPE_THRESHOLD } from '../utils/constants'
  * Swipe-left gesture hook for touch and mouse.
  * @param {Function} onSwipeLeft - Callback when swipe threshold is exceeded
  * @param {number} threshold - Swipe distance in px (default 80)
- * @param {Function} onConfirm - Optional confirmation callback before executing onSwipeLeft
  * @returns {{ onTouchStart, onTouchMove, onTouchEnd, translateX: number, isSwiping: boolean }}
  */
-export function useSwipe(onSwipeLeft, threshold = SWIPE_THRESHOLD, onConfirm) {
+export function useSwipe(onSwipeLeft, threshold = SWIPE_THRESHOLD) {
   const [translateX, setTranslateX] = useState(0)
   const [isSwiping, setIsSwiping] = useState(false)
   const startX = useRef(0)
@@ -41,16 +40,11 @@ export function useSwipe(onSwipeLeft, threshold = SWIPE_THRESHOLD, onConfirm) {
     // Use functional update to get latest translateX
     setTranslateX((prev) => {
       if (prev < -threshold) {
-        // If confirmation callback provided, call it; otherwise execute directly
-        if (onConfirm) {
-          onConfirm(onSwipeLeft)
-        } else {
-          onSwipeLeft?.()
-        }
+        onSwipeLeft?.()
       }
       return 0
     })
-  }, [threshold, onSwipeLeft, onConfirm])
+  }, [threshold, onSwipeLeft])
 
   return {
     onTouchStart: (e) => handleStart(e.touches[0].clientX),
