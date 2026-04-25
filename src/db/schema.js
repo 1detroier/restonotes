@@ -40,4 +40,24 @@ db.version(4).stores({
   })
 })
 
+// v5: add customerName to ventas for takeaway orders
+db.version(5).stores({
+  ventas: '++id, mesaId, fecha, timestamp, total, customerName'
+}).upgrade(async (tx) => {
+  const table = tx.table('ventas')
+  await table.toCollection().modify((venta) => {
+    if (venta.customerName === undefined) venta.customerName = null
+  })
+})
+
+// v6: add mesaIdOriginal to cocina for takeaway linked to mesa tracking
+db.version(6).stores({
+  cocina: '++id, mesaId, status, timestamp, mesaIdOriginal'
+}).upgrade(async (tx) => {
+  const table = tx.table('cocina')
+  await table.toCollection().modify((item) => {
+    if (item.mesaIdOriginal === undefined) item.mesaIdOriginal = null
+  })
+})
+
 export default db

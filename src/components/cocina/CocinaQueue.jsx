@@ -29,7 +29,8 @@ export default function CocinaQueue({ items, onCompleteMesa, onStartPreparing, o
   const mesaId = items[0]?.mesaId
   const numericId = Number(mesaId)
   const isTakeaway = !Number.isNaN(numericId) && numericId < 0
-  const heading = isTakeaway ? `Para llevar #${Math.abs(numericId)}` : `Mesa #${mesaId}`
+  const isTakeawayNoMesa = !Number.isNaN(numericId) && numericId < 0 && items[0]?.mesaIdOriginal == null
+  const heading = isTakeaway ? `📦 Para llevar #${Math.abs(numericId)}` : `Mesa #${mesaId}`
   const targetMesaId = Number.isNaN(numericId) ? mesaId : numericId
 
   const sortedItems = items.sort((a, b) => a.timestamp.localeCompare(b.timestamp))

@@ -83,13 +83,23 @@ export default function VariantSelectionModal({ producto, initialQuantity = 1, o
           <label className="label">
             <span className="label-text">Cantidad</span>
           </label>
-          <input
-            type="number"
-            min="1"
-            value={quantity}
-            onChange={(e) => setQuantity(parseInt(e.target.value, 10) || 1)}
-            className="input input-bordered w-full"
-          />
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              className="btn btn-circle btn-sm"
+              onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+            >
+              -
+            </button>
+            <span className="text-lg font-bold w-8 text-center">{quantity}</span>
+            <button
+              type="button"
+              className="btn btn-circle btn-sm"
+              onClick={() => setQuantity((q) => q + 1)}
+            >
+              +
+            </button>
+          </div>
         </div>
 
         <div>

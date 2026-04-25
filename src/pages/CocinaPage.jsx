@@ -37,6 +37,13 @@ function HistoryModal({ isOpen, onClose, group }) {
     return new Date(ts).toLocaleDateString('es-EC', { day: '2-digit', month: 'short', year: 'numeric' })
   }
 
+  // Build the label based on group type
+  const groupLabel = group.isTakeaway 
+    ? '📦 Para llevar' 
+    : group.isTakeawayWithMesa 
+      ? `📦 Mesa #${group.mesaIdOriginal || group.mesaId}`
+      : `Mesa #${group.mesaId}`
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
@@ -50,7 +57,7 @@ function HistoryModal({ isOpen, onClose, group }) {
       >
         <div className="flex justify-between items-center mb-4">
           <div>
-            <h3 className="text-lg font-bold">Mesa #{group.mesaId}</h3>
+            <h3 className="text-lg font-bold">{groupLabel}</h3>
             <p className="text-sm text-base-content/60">
               {group.type === 'completed' ? 'Completada' : 'Cancelada'} • {duration}
             </p>
@@ -156,17 +163,35 @@ export default function CocinaPage() {
       } 
       // For completed/cancelled items, group by mesaId + creation time (same "note" = same minute)
       else {
-        // Group items that were created around the same time as the same "note"
-        // Use mesaId + first 16 chars of timestamp (to the minute) as key
-        const timestampMinute = item.timestamp ? item.timestamp.substring(0, 16) : ''
-        const key = `${item.mesaId}-${timestampMinute}`
+        // Determine if this is a takeaway order (negative mesaId means takeaway)
+        const numericMesaId = Number(item.mesaId)
+        const isTakeaway = !Number.isNaN(numericMesaId) && numericMesaId < 0
+        const isTakeawayNoMesa = isTakeaway && item.mesaIdOriginal == null
+
+        // For takeaway without mesa link: group by negative mesaId + timestamp (each order is separate)
+        // For takeaway WITH mesa link: group by positive mesaId so mesa + takeaway items appear together
+        // For regular mesa: group by mesaId + timestamp
+        let groupKey
+        if (isTakeawayNoMesa) {
+          // Each takeaway order (negative id) is its own group
+          groupKey = `takeaway-${Math.abs(numericMesaId)}-${item.timestamp?.substring(0, 16) || ''}`
+        } else if (isTakeaway) {
+          // Takeaway linked to a mesa - group by the original mesa number so they appear together
+          const originalMesa = item.mesaIdOriginal != null ? item.mesaIdOriginal : Math.abs(numericMesaId)
+          groupKey = `mesa-${originalMesa}-${item.timestamp?.substring(0, 16) || ''}`
+        } else {
+          // Regular mesa - group by mesaId + timestamp minute
+          groupKey = `${item.mesaId}-${item.timestamp?.substring(0, 16) || ''}`
+        }
         
-        let group = completed.find((g) => g.groupKey === key) || cancelled.find((g) => g.groupKey === key)
+        let group = completed.find((g) => g.groupKey === groupKey) || cancelled.find((g) => g.groupKey === groupKey)
         
         if (!group) {
           group = { 
-            groupKey: key,
-            mesaId: item.mesaId, 
+            groupKey,
+            mesaId: item.mesaId,
+            isTakeaway: isTakeawayNoMesa,
+            isTakeawayWithMesa: isTakeaway && !isTakeawayNoMesa,
             items: [], 
             startTime: null, 
             endTime: null 
@@ -338,11 +363,17 @@ export default function CocinaPage() {
           // History view: cancelled first, then completed
           <div className="space-y-4">
             {/* Cancelled section - first since there should be fewer */}
-            {filteredStats.cancelled.length > 0 && (
+              {filteredStats.cancelled.length > 0 && (
               <div>
                 <h2 className="text-sm font-bold text-error/70 uppercase mb-2">Canceladas ({cancelledCount})</h2>
                 <div className="space-y-2">
-                  {filteredStats.cancelled.map((group) => (
+                  {filteredStats.cancelled.map((group) => {
+                    const label = group.isTakeaway 
+                      ? `📦 Para llevar` 
+                      : group.isTakeawayWithMesa 
+                        ? `📦 Mesa #${group.mesaIdOriginal || group.mesaId}`
+                        : `Mesa #${group.mesaId}`
+                    return (
                     <button
                       key={`cancelled-${group.groupKey}`}
                       type="button"
@@ -351,7 +382,7 @@ export default function CocinaPage() {
                     >
                       <div className="flex justify-between items-center">
                         <div>
-                          <span className="font-bold">Mesa #{group.mesaId}</span>
+                          <span className="font-bold">{label}</span>
                           <span className="text-sm text-base-content/60 ml-2">
                             {formatDate(group.endTime)}
                           </span>
@@ -364,7 +395,7 @@ export default function CocinaPage() {
                         {formatTimeRange(group)} • {group.items.length} item{group.items.length !== 1 ? 's' : ''}
                       </div>
                     </button>
-                  ))}
+                  )})}
                 </div>
               </div>
             )}
@@ -374,7 +405,13 @@ export default function CocinaPage() {
               <div className={filteredStats.cancelled.length > 0 ? 'mt-4' : ''}>
                 <h2 className="text-sm font-bold text-base-content/60 uppercase mb-2">Completadas ({completedCount})</h2>
                 <div className="space-y-2">
-                  {filteredStats.completed.map((group) => (
+                  {filteredStats.completed.map((group) => {
+                    const label = group.isTakeaway 
+                      ? `📦 Para llevar` 
+                      : group.isTakeawayWithMesa 
+                        ? `📦 Mesa #${group.mesaIdOriginal || group.mesaId}`
+                        : `Mesa #${group.mesaId}`
+                    return (
                     <button
                       key={`completed-${group.groupKey}`}
                       type="button"
@@ -383,12 +420,12 @@ export default function CocinaPage() {
                     >
                       <div className="flex justify-between items-center">
                         <div>
-                          <span className="font-bold">Mesa #{group.mesaId}</span>
+                          <span className="font-bold">{label}</span>
                           <span className="text-sm text-base-content/60 ml-2">
                             {formatDate(group.endTime)}
                           </span>
                         </div>
-                        <div className="text-sm text-base-content/70">
+                        <div className="text-sm font-medium text-base-content/70">
                           {calculateDuration(group)}
                         </div>
                       </div>
@@ -396,7 +433,7 @@ export default function CocinaPage() {
                         {formatTimeRange(group)} • {group.items.length} item{group.items.length !== 1 ? 's' : ''}
                       </div>
                     </button>
-                  ))}
+                  )})}
                 </div>
               </div>
             )}

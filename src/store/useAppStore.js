@@ -306,6 +306,19 @@ export const useAppStore = create((set, get) => ({
       const combinedItems = [...mesaItems, ...takeawayItems]
       const takeawayTotal = linkedTakeaways.reduce((sum, order) => sum + (order.total || 0), 0)
 
+      // Use mesa's openedAt timestamp as the sale time (when first order was placed)
+      const ventaTimestamp = mesa.openedAt || new Date().toISOString()
+      const ventaFecha = ventaTimestamp.substring(0, 10)
+
+      // If there are linked takeaways, use the earliest timestamp between mesa and first takeaway
+      let finalTimestamp = ventaTimestamp
+      if (linkedTakeaways.length > 0) {
+        const firstTakeawayPedido = linkedTakeaways.flatMap(o => o.pedidos || [])[0]
+        if (firstTakeawayPedido?.createdAt && firstTakeawayPedido.createdAt < finalTimestamp) {
+          finalTimestamp = firstTakeawayPedido.createdAt
+        }
+      }
+
       const now = new Date()
       const venta = {
         mesaId: mesa.numero,
@@ -557,6 +570,7 @@ export const useAppStore = create((set, get) => ({
           if (!existingPedidoIds.has(pedido.id) && !isCancelled(pedido)) {
             await cocinaRepo.create({
               mesaId: mesaKey,
+              mesaIdOriginal: order.mesaId != null ? order.mesaId : null, // Track original mesa if linked
               pedidoId: pedido.id,
               productoNombre: pedido.nombre,
               cantidad: pedido.cantidad,
@@ -707,7 +721,7 @@ export const useAppStore = create((set, get) => ({
       const order = takeaways.find((t) => t.id === id)
       if (!order) throw new Error(`Takeaway order ${id} not found`)
 
-      // Save venta snapshot
+      // Save venta snapshot with customerName (use current time)
       const now = new Date()
       await ventaRepo.create({
         mesaId: null, // null for takeaway
@@ -715,7 +729,8 @@ export const useAppStore = create((set, get) => ({
         timestamp: now.toISOString(),
         total: order.total || 0,
         items: JSON.parse(JSON.stringify(order.pedidos || [])),
-        paymentMethod
+        paymentMethod,
+        customerName: order.customerName || null
       })
 
       await pedidosLlevarRepo.delete(id)

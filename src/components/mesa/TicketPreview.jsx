@@ -1,7 +1,7 @@
 import { useSwipe } from '../../hooks/useSwipe'
 import { groupByCategory, calcTotal, getCancelledCount } from '../../utils/orderHelpers'
 import { formatPrice } from '../../utils/formatters'
-import { CATEGORIA_LABELS } from '../../utils/constants'
+import { CATEGORIA_LABELS, SWIPE_THRESHOLD } from '../../utils/constants'
 
 /**
  * Ticket preview showing grouped order items with subtotals.
@@ -74,7 +74,12 @@ export default function TicketPreview({ pedidos, onRemove, onUpdateQty, onCancel
  * Individual ticket item with swipe-to-delete, +/- quantity controls, and cancel button.
  */
 function SwipeableItem({ item, onRemove, onUpdateQty, onCancel, mesaId }) {
-  const swipe = useSwipe(onRemove)
+  const handleSwipeConfirm = (onSwipeLeft) => {
+    if (window.confirm(`¿Eliminar ${item.nombre} del pedido?`)) {
+      onSwipeLeft()
+    }
+  }
+  const swipe = useSwipe(onRemove, SWIPE_THRESHOLD, handleSwipeConfirm)
   const isMenu = item.categoria === 'menu'
   const isCancelled = item.status === 'cancelado'
 

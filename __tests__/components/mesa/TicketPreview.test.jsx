@@ -1,8 +1,12 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import TicketPreview from '../../../src/components/mesa/TicketPreview'
 
 describe('TicketPreview', () => {
+  beforeEach(() => {
+    vi.stubGlobal('confirm', vi.fn(() => true))
+  })
+
   const pedidos = [
     { id: 'a', nombre: 'Café', precio: 1.5, cantidad: 2, categoria: 'bebidas', emoji: '☕' },
     { id: 'b', nombre: 'Ensalada', precio: 8, cantidad: 1, categoria: 'entrantes', emoji: '🥗' },

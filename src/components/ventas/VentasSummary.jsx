@@ -54,6 +54,7 @@ export default function VentasSummary({ ventas, fecha, onDelete }) {
           .map((venta, idx) => {
             const hora = venta.timestamp ? venta.timestamp.substring(11, 16) : '--:--'
             const mesaLabel = venta.mesaId != null ? `Mesa #${venta.mesaId}` : 'Para Llevar'
+            const customerLabel = venta.customerName ? ` (${venta.customerName})` : ''
             return (
               <div
                 key={venta.id || idx}
@@ -63,7 +64,7 @@ export default function VentasSummary({ ventas, fecha, onDelete }) {
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium">{hora}</span>
-                      <span className="text-xs text-base-content/50">{mesaLabel}</span>
+                      <span className="text-xs text-base-content/50">{mesaLabel}{customerLabel}</span>
                     </div>
                     <p className="text-xs text-base-content/50">
                       {venta.paymentMethod ? paymentLabels[venta.paymentMethod] || venta.paymentMethod : ''}
