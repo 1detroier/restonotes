@@ -23,8 +23,8 @@ describe('CartaPage Integration', () => {
   const mockCloseModal = vi.fn()
 
   const mockProductos = [
-    { id: 1, nombre: 'Ensalada Mixta', precio: 8.5, categoria: 'entrantes', emoji: '🥗', activo: true },
     { id: 2, nombre: 'Paella Valenciana', precio: 14, categoria: 'con_arroz', emoji: '🥘', activo: true },
+    { id: 1, nombre: 'Ensalada Mixta', precio: 8.5, categoria: 'entrantes', emoji: '🥗', activo: true },
     { id: 3, nombre: 'Café Solo', precio: 1.5, categoria: 'bebidas', emoji: '☕', activo: false }
   ]
 
@@ -109,7 +109,8 @@ describe('CartaPage Integration', () => {
       fireEvent.click(toggleBtns[0])
     })
 
-    expect(mockToggleProducto).toHaveBeenCalledWith(1)
+    // After alphabetical sort, Paella (con_arroz) comes first
+    expect(mockToggleProducto).toHaveBeenCalledWith(2)
   })
 
   it('calls deleteProducto when delete button clicked', async () => {
@@ -120,7 +121,8 @@ describe('CartaPage Integration', () => {
       fireEvent.click(deleteBtn)
     })
 
-    expect(mockDeleteProducto).toHaveBeenCalledWith(1)
+    // After alphabetical sort, Paella (con_arroz) comes first
+    expect(mockDeleteProducto).toHaveBeenCalledWith(2)
   })
 
   it('shows empty state when no productos match filters', () => {

@@ -11,11 +11,13 @@ export const useUIStore = create(
     (set) => ({
       // State
       activeTab: 'mesas',
+      mesaCount: 14,
       modals: [],
       toasts: [],
 
       // Actions
       setActiveTab: (tab) => set({ activeTab: tab }),
+      setMesaCount: (count) => set({ mesaCount: count }),
 
       addToast: (message, type = 'info') => {
         const id = crypto.randomUUID()
@@ -53,7 +55,8 @@ export const useUIStore = create(
     {
       name: 'restonotes-ui',
       partialize: (state) => ({
-        activeTab: state.activeTab
+        activeTab: state.activeTab,
+        mesaCount: state.mesaCount
       })
     }
   )

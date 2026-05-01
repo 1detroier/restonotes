@@ -6,6 +6,7 @@ import { menuDiaRepo } from '../db/repositories/menuDia'
 import { ventaRepo } from '../db/repositories/ventas'
 import { cocinaRepo } from '../db/repositories/cocina'
 import { pedidosLlevarRepo } from '../db/repositories/pedidosLlevar'
+import { categoriaRepo } from '../db/repositories/categorias'
 import { createPedidoItem, calcTotal, isCancelled, formatVariantLabel } from '../utils/orderHelpers'
 import { normalizeVariantGroups, isSameVariantOptions } from '../utils/variants'
 import { COCINA_STATUS } from '../utils/constants'
@@ -18,6 +19,7 @@ export const useAppStore = create((set, get) => ({
   // State
   mesas: [],
   productos: [],
+  categorias: [],
   menuDelDia: null,
   mesaActivaId: null,
   loading: false,
@@ -35,10 +37,13 @@ export const useAppStore = create((set, get) => ({
       // Bootstrap: create mesas and seed products if empty
       await bootstrapMesas()
       await seedProductos()
+      // Seed default categorias if empty
+      await categoriaRepo.seedDefaults()
 
       // Load all data from Dexie
       await get().loadMesas()
       await get().loadProductos()
+      await get().loadCategorias()
       await get().loadMenuDelDia()
       await get().loadTakeaways()
     } catch (error) {
@@ -63,6 +68,15 @@ export const useAppStore = create((set, get) => ({
       set({ productos })
     } catch (error) {
       console.error('[AppStore] loadProductos failed:', error)
+    }
+  },
+
+  loadCategorias: async () => {
+    try {
+      const categorias = await categoriaRepo.getAll()
+      set({ categorias })
+    } catch (error) {
+      console.error('[AppStore] loadCategorias failed:', error)
     }
   },
 

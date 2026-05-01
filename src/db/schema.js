@@ -60,4 +60,11 @@ db.version(6).stores({
   })
 })
 
+// v7: add categorias table for menu configuration
+db.version(7).stores({
+  categorias: '++id, key, label, tipo, orden'
+}).upgrade(async (tx) => {
+  // New table starts empty — seed default categories on first run
+})
+
 export default db

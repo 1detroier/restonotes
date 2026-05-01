@@ -38,13 +38,14 @@ describe('constants', () => {
     expect(Object.keys(ESTADOS_MESA)).toHaveLength(3)
   })
 
-  it('TABS has all 6 tab identifiers', () => {
+  it('TABS has all 7 tab identifiers', () => {
     expect(TABS.MESAS).toBe('mesas')
     expect(TABS.CARTA).toBe('carta')
     expect(TABS.MENU).toBe('menu')
     expect(TABS.COCINA).toBe('cocina')
     expect(TABS.PARA_LLEVAR).toBe('para_llevar')
     expect(TABS.VENTAS).toBe('ventas')
-    expect(Object.keys(TABS)).toHaveLength(6)
+    expect(TABS.CONFIG).toBe('config')
+    expect(Object.keys(TABS)).toHaveLength(7)
   })
 })

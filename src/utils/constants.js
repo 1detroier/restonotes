@@ -24,7 +24,8 @@ export const TABS = {
   MENU: 'menu',
   COCINA: 'cocina',
   PARA_LLEVAR: 'para_llevar',
-  VENTAS: 'ventas'
+  VENTAS: 'ventas',
+  CONFIG: 'config'
 }
 
 /** Kitchen item status values */

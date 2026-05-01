@@ -8,6 +8,7 @@ import MenuPage from './pages/MenuPage'
 import CocinaPage from './pages/CocinaPage'
 import ParaLlevarPage from './pages/ParaLlevarPage'
 import VentasPage from './pages/VentasPage'
+import ConfigPage from './pages/ConfigPage'
 
 const pages = {
   mesas: MesasPage,
@@ -15,7 +16,8 @@ const pages = {
   menu: MenuPage,
   cocina: CocinaPage,
   para_llevar: ParaLlevarPage,
-  ventas: VentasPage
+  ventas: VentasPage,
+  config: ConfigPage
 }
 
 export default function App() {
