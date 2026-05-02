@@ -66,12 +66,24 @@ export const PEDIDO_STATUS = {
   CANCELADO: 'cancelado'
 }
 
-/** Food emojis for producto selection (5x4 grid) */
+/** Food emojis for producto selection (expanded grid) */
 export const EMOJI_GRID = [
+  // Main dishes
   '🍝', '🍲', '🥗', '🍕', '🍔',
   '🥩', '🐟', '🍗', '🥘', '🍜',
-  '🍰', '🧁', '🍮', '☕', '🍺',
-  '🍷', '🥤', '🧃', '💧', '🍞'
+  '🍳', '🥪', '🌮', '🥙', '🍖',
+  // Sides & starches
+  '🍟', '🥔', '🍚', '🥖', '🥨',
+  '🥐', '🥯', '🫓', '🌭', '🥦',
+  // Desserts
+  '🍰', '🧁', '🍮', '🍩', '🍪',
+  '🍫', '🍬', '🍭', '🍨', '🥧',
+  // Drinks
+  '☕', '🍵', '🧉', '🥤', '🧃',
+  '🧋', '🍶', '🍾', '🍷', '🍸',
+  '🍹', '🍺', '🥛', '💧', '🧴',
+  // Misc
+  '🥢', '🍴', '🔪', '🥄', '🧂'
 ]
 
 /** Human-readable category labels */

@@ -3,11 +3,11 @@ import { render, screen, fireEvent } from '@testing-library/react'
 import EmojiPicker from '../../../src/components/carta/EmojiPicker'
 
 describe('EmojiPicker', () => {
-  it('renders 20 emojis in grid', () => {
+  it('renders emoji grid', () => {
     render(<EmojiPicker onSelect={vi.fn()} selected="" />)
 
     const buttons = screen.getAllByRole('button')
-    expect(buttons).toHaveLength(20)
+    expect(buttons).toHaveLength(55)
   })
 
   it('calls onSelect when emoji clicked', () => {
