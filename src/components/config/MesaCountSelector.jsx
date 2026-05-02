@@ -4,30 +4,31 @@ import { useAppStore } from '../../store/useAppStore'
 import { db } from '../../db/schema'
 import { ESTADOS_MESA } from '../../utils/constants'
 
-const MESA_OPTIONS = [6, 8, 10, 12, 14, 16, 18, 20]
-
 export default function MesaCountSelector() {
   const { mesaCount, setMesaCount } = useUIStore()
   const { loadMesas } = useAppStore()
   const [showConfirm, setShowConfirm] = useState(false)
   const [pendingCount, setPendingCount] = useState(null)
+  const [inputValue, setInputValue] = useState(mesaCount)
 
   const handleChange = (e) => {
-    const newCount = parseInt(e.target.value, 10)
-    if (newCount !== mesaCount) {
-      setPendingCount(newCount)
+    const value = parseInt(e.target.value, 10)
+    setInputValue(value)
+    if (!isNaN(value) && value !== mesaCount && value > 0) {
+      setPendingCount(value)
       setShowConfirm(true)
     }
   }
 
   const confirmChange = async () => {
-    if (pendingCount !== null) {
+    if (pendingCount !== null && pendingCount > 0) {
       // Recreate mesas with new count
       await recreateMesas(pendingCount)
       // Reload mesas in store
       await loadMesas()
       // Save the new count to localStorage
       setMesaCount(pendingCount)
+      setInputValue(pendingCount)
       setPendingCount(null)
       setShowConfirm(false)
     }
@@ -55,6 +56,7 @@ export default function MesaCountSelector() {
   }
 
   const cancelChange = () => {
+    setInputValue(mesaCount)
     setPendingCount(null)
     setShowConfirm(false)
   }
@@ -62,17 +64,15 @@ export default function MesaCountSelector() {
   return (
     <div className="bg-base-100 p-4 rounded-lg shadow-sm">
       <h3 className="font-semibold mb-3">Número de Mesas</h3>
-      <select
-        value={mesaCount}
+      <input
+        type="number"
+        min="1"
+        max="50"
+        value={inputValue}
         onChange={handleChange}
-        className="select select-bordered w-full"
-      >
-        {MESA_OPTIONS.map((num) => (
-          <option key={num} value={num}>
-            {num} mesas
-          </option>
-        ))}
-      </select>
+        className="input input-bordered w-full"
+        placeholder="Número de mesas"
+      />
 
       {/* Confirmation Modal */}
       {showConfirm && (
