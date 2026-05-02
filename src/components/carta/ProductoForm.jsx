@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useProductoForm } from '../../hooks/useProductoForm'
-import { CATEGORIAS_CARTA, CATEGORIA_LABELS } from '../../utils/constants'
+import { useAppStore } from '../../store/useAppStore'
+import { CATEGORIA_LABELS } from '../../utils/constants'
 import EmojiPicker from './EmojiPicker'
 import { normalizeVariantGroups, createVariantOptionId } from '../../utils/variants'
 
@@ -11,6 +12,7 @@ const buildInitialVariants = (producto) => {
 
 export default function ProductoForm({ producto, onSave, onCancel }) {
   const isEdit = !!producto
+  const { categorias } = useAppStore()
   const { values, errors, isValid, setField, reset, validate } = useProductoForm(
     isEdit
       ? {
@@ -164,11 +166,26 @@ export default function ProductoForm({ producto, onSave, onCancel }) {
           }`}
         >
           <option value="">Seleccionar...</option>
-          {CATEGORIAS_CARTA.map((cat) => (
-            <option key={cat} value={cat}>
-              {CATEGORIA_LABELS[cat]}
-            </option>
-          ))}
+          {categorias && categorias.length > 0 ? (
+            categorias.map((cat) => (
+              <option key={cat.key} value={cat.key}>
+                {cat.label}
+              </option>
+            ))
+          ) : (
+            // Fallback to constants if no categorias in store
+            <>
+              <option value="con_arroz">Con Arroz</option>
+              <option value="sin_arroz">Sin Arroz</option>
+              <option value="pescado">Pescado</option>
+              <option value="sopas">Sopas / Caldos</option>
+              <option value="entrantes">Entrantes</option>
+              <option value="arroz_frijoles">Arroz con Frijoles</option>
+              <option value="bolon">Bolón</option>
+              <option value="postres">Postres</option>
+              <option value="bebidas">Bebidas</option>
+            </>
+          )}
         </select>
         {errors.categoria && (
           <p className="text-error text-xs mt-1">{errors.categoria}</p>
