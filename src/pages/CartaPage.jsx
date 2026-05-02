@@ -6,13 +6,22 @@ import ProductoForm from '../components/carta/ProductoForm'
 import FilterChips from '../components/carta/FilterChips'
 import SearchBar from '../components/carta/SearchBar'
 import ImportExportButtons from '../components/carta/ImportExportButtons'
+import ConfigPage from '../pages/ConfigPage'
 import { CATEGORIA_LABELS } from '../utils/constants'
+import { Settings } from 'lucide-react'
 
 export default function CartaPage() {
   const { productos, categorias, addProducto, updateProducto, toggleProducto, deleteProducto } = useAppStore()
   const { addToast, openModal, closeModal, modals } = useUIStore()
   const [activeCategory, setActiveCategory] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
+
+  const handleOpenConfig = () => {
+    openModal({
+      title: 'Configuración',
+      content: <ConfigPage onClose={closeModal} />
+    })
+  }
 
   // Get category keys from stored categorias or fall back to defaults
   const categoryKeys = useMemo(() => {
@@ -160,7 +169,16 @@ export default function CartaPage() {
     <div className="p-4 pb-20 space-y-4">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">La Carta</h2>
-        <ImportExportButtons onImport={handleImport} />
+        <div className="flex gap-2">
+          <button
+            onClick={handleOpenConfig}
+            className="btn btn-ghost btn-circle btn-sm"
+            aria-label="Configuración"
+          >
+            <Settings size={20} />
+          </button>
+          <ImportExportButtons onImport={handleImport} />
+        </div>
       </div>
 
       <SearchBar onSearch={setSearchQuery} />

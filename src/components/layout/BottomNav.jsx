@@ -1,4 +1,4 @@
-import { LayoutGrid, BookOpen, UtensilsCrossed, Flame, Package, BarChart3, Settings } from 'lucide-react'
+import { LayoutGrid, BookOpen, UtensilsCrossed, Flame, Package, BarChart3 } from 'lucide-react'
 import { useUIStore } from '../../store/useUIStore'
 import { useAppStore } from '../../store/useAppStore'
 import { TABS } from '../../utils/constants'
@@ -9,8 +9,7 @@ const tabs = [
   { id: TABS.MENU, label: 'Menú', icon: UtensilsCrossed },
   { id: TABS.COCINA, label: 'Cocina', icon: Flame },
   { id: TABS.PARA_LLEVAR, label: 'Para Llevar', icon: Package },
-  { id: TABS.VENTAS, label: 'Ventas', icon: BarChart3 },
-  { id: TABS.CONFIG, label: 'Config', icon: Settings }
+  { id: TABS.VENTAS, label: 'Ventas', icon: BarChart3 }
 ]
 
 export default function BottomNav() {
