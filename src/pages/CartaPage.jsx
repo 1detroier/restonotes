@@ -6,21 +6,18 @@ import ProductoForm from '../components/carta/ProductoForm'
 import FilterChips from '../components/carta/FilterChips'
 import SearchBar from '../components/carta/SearchBar'
 import ImportExportButtons from '../components/carta/ImportExportButtons'
-import ConfigPage from '../pages/ConfigPage'
-import { CATEGORIA_LABELS } from '../utils/constants'
+import { CATEGORIA_LABELS, TABS } from '../utils/constants'
 import { Settings } from 'lucide-react'
 
 export default function CartaPage() {
   const { productos, categorias, addProducto, updateProducto, toggleProducto, deleteProducto } = useAppStore()
-  const { addToast, openModal, closeModal, modals } = useUIStore()
+  const { addToast, openModal, closeModal, modals, setActiveTab } = useUIStore()
   const [activeCategory, setActiveCategory] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
 
   const handleOpenConfig = () => {
-    openModal({
-      title: 'Configuración',
-      content: <ConfigPage onClose={closeModal} />
-    })
+    // Navigate to config tab instead of opening modal
+    setActiveTab(TABS.CONFIG)
   }
 
   // Get category keys from stored categorias or fall back to defaults
