@@ -1,3 +1,4 @@
+import { useAppStore } from '../../store/useAppStore'
 import CocinaItem from './CocinaItem'
 import { COCINA_STATUS } from '../../utils/constants'
 
@@ -7,6 +8,8 @@ import { COCINA_STATUS } from '../../utils/constants'
  * @param {Array} props.items - Array of CocinaItem objects
  */
 export default function CocinaQueue({ items, onCompleteMesa, onStartPreparing, onCancelMesa }) {
+  const { mesas = [] } = useAppStore()
+  
   if (!items || items.length === 0) return null
 
   // Determine group status based on items
@@ -30,7 +33,18 @@ export default function CocinaQueue({ items, onCompleteMesa, onStartPreparing, o
   const numericId = Number(mesaId)
   const isTakeaway = !Number.isNaN(numericId) && numericId < 0
   const isTakeawayNoMesa = !Number.isNaN(numericId) && numericId < 0 && items[0]?.mesaIdOriginal == null
-  const heading = isTakeaway ? `📦 Para llevar #${Math.abs(numericId)}` : `Mesa #${mesaId}`
+  
+  // Get correct mesa numero for display
+  let heading = ''
+  if (isTakeaway) {
+    heading = `📦 Para llevar #${Math.abs(numericId)}`
+  } else {
+    // Look up the mesa to get its display numero (fallback to mesaId if not found)
+    const mesa = mesas.find(m => m.id === numericId)
+    const mesaNumero = mesa?.numero ?? numericId
+    heading = `Mesa #${mesaNumero}`
+  }
+  
   const targetMesaId = Number.isNaN(numericId) ? mesaId : numericId
 
   const sortedItems = items.sort((a, b) => a.timestamp.localeCompare(b.timestamp))
