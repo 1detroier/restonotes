@@ -16,7 +16,7 @@ import { CATEGORIA_LABELS, SWIPE_THRESHOLD } from '../../utils/constants'
  * @param {Function} props.onEdit - Edit menu item handler (item) => void
  * @param {number} props.mesaId - Mesa ID for cancellation
  */
-export default function TicketPreview({ pedidos, onRemove, onUpdateQty, onCancel, onEdit, mesaId }) {
+export default function TicketPreview({ pedidos, onRemove, onUpdateQty, onCancel, onEdit, mesaId, cocinaItems = [] }) {
   if (!pedidos || pedidos.length === 0) {
     return (
       <div className="flex items-center justify-center h-32 p-4">
@@ -38,17 +38,31 @@ export default function TicketPreview({ pedidos, onRemove, onUpdateQty, onCancel
             {CATEGORIA_LABELS[categoria] || categoria}
           </h4>
           <div className="bg-base-200 rounded-lg overflow-hidden">
-            {items.map((item) => (
-              <SwipeableItem
-                key={item.id}
-                item={item}
-                onRemove={() => onRemove?.(item.id)}
-                onUpdateQty={onUpdateQty}
-                onCancel={() => onCancel?.(mesaId, item.id)}
-                onEdit={onEdit}
-                mesaId={mesaId}
-              />
-            ))}
+            {items.map((item) => {
+              // Find matching cocina item by nombre (approximation)
+              const cocinaItem = cocinaItems.find(c => 
+                c.mesaId === mesaId && c.nombre === item.nombre && c.status !== 'cancelado'
+              )
+              // Determine background color based on cocina status
+              let bgClass = 'bg-base-200'
+              if (cocinaItem) {
+                if (cocinaItem.status === 'pendiente') bgClass = 'bg-yellow-500/20'
+                else if (cocinaItem.status === 'preparando') bgClass = 'bg-orange-500/20'
+                else if (cocinaItem.status === 'listo') bgClass = 'bg-green-500/20'
+              }
+              return (
+                <SwipeableItem
+                  key={item.id}
+                  item={item}
+                  bgClass={bgClass}
+                  onRemove={() => onRemove?.(item.id)}
+                  onUpdateQty={onUpdateQty}
+                  onCancel={() => onCancel?.(mesaId, item.id)}
+                  onEdit={onEdit}
+                  mesaId={mesaId}
+                />
+              )
+            })}
           </div>
           {/* Category subtotal */}
           <div className="text-right text-xs text-base-content/60 px-2 py-1">
@@ -76,7 +90,7 @@ export default function TicketPreview({ pedidos, onRemove, onUpdateQty, onCancel
 /**
  * Individual ticket item with swipe-to-delete, +/- quantity controls, and cancel button.
  */
-function SwipeableItem({ item, onRemove, onUpdateQty, onCancel, onEdit, mesaId }) {
+function SwipeableItem({ item, bgClass = 'bg-base-200', onRemove, onUpdateQty, onCancel, onEdit, mesaId }) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const swipe = useSwipe(
     () => setShowDeleteConfirm(true),
@@ -133,7 +147,7 @@ function SwipeableItem({ item, onRemove, onUpdateQty, onCancel, onEdit, mesaId }
 
       {/* Foreground content */}
       <div
-        className={`relative flex justify-between items-start px-3 py-2 bg-base-200 transition-transform ${
+        className={`relative flex justify-between items-start px-3 py-2 ${bgClass} transition-transform ${
           isCancelled ? 'opacity-50' : ''
         }`}
         style={{ transform: `translateX(${swipe.translateX}px)` }}

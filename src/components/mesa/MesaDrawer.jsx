@@ -218,23 +218,15 @@ export default function MesaDrawer({ mesaId }) {
                 ✕
               </button>
             </div>
-            {/* Kitchen control buttons */}
-            <div className="flex gap-2 mt-2 px-1">
+            {/* Kitchen control - single button */}
+            {pedidos.length > 0 && (
               <button
-                className="btn btn-sm btn-outline flex-1 min-h-[40px]"
-                onClick={() => startPreparingMesa(mesaId)}
-                title="Enviar a cocina"
-              >
-                🍳 Preparar
-              </button>
-              <button
-                className="btn btn-sm btn-outline flex-1 min-h-[40px]"
+                className="btn btn-sm btn-primary w-full mt-2 min-h-[40px]"
                 onClick={() => advanceAllCocinaItems()}
-                title="Avanzar estado"
               >
-                ⏭️ Siguiente
+                🍳 Avanzar Estado
               </button>
-            </div>
+            )}
 
             {/* Tabs */}
             <div className="flex gap-1 mt-3">
@@ -305,7 +297,7 @@ export default function MesaDrawer({ mesaId }) {
                 <h3 className="text-sm font-semibold px-4 py-2 text-base-content/70 uppercase">
                   Ticket ({pedidos.length} artículo{pedidos.length !== 1 ? 's' : ''}{getCancelledCount(pedidos) > 0 ? `, ${getCancelledCount(pedidos)} cancelado${getCancelledCount(pedidos) !== 1 ? 's' : ''}` : ''})
                 </h3>
-                <TicketPreview pedidos={pedidos} onRemove={handleRemoveItem} onUpdateQty={handleUpdateQty} onCancel={handleCancelItem} onEdit={handleEditMenuItem} mesaId={mesaId} />
+                <TicketPreview pedidos={pedidos} onRemove={handleRemoveItem} onUpdateQty={handleUpdateQty} onCancel={handleCancelItem} onEdit={handleEditMenuItem} mesaId={mesaId} cocinaItems={cocina} />
               </div>
             )}
 
