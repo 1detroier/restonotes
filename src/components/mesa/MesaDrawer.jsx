@@ -19,7 +19,7 @@ import VariantSelectionModal from '../common/VariantSelectionModal'
  * @param {number} props.mesaId - Active mesa ID
  */
 export default function MesaDrawer({ mesaId }) {
-  const { mesas, productos, menuDelDia, takeaways, addItemToMesa, removeItemFromMesa, updateItemQuantity, updateMesaItem, closeCuenta, cancelItem, cancelMesaPedido, loadMesas } = useAppStore()
+  const { mesas, productos, menuDelDia, takeaways, addItemToMesa, removeItemFromMesa, updateItemQuantity, updateMesaItem, closeCuenta, cancelItem, cancelMesaPedido, loadMesas, startPreparingMesa, completeMesaCocina, cocina, advanceCocinaStatus } = useAppStore()
   const { closeModal } = useUIStore()
   const [activeTab, setActiveTab] = useState('carta')
   const [qtyProduct, setQtyProduct] = useState(null)
@@ -146,6 +146,18 @@ export default function MesaDrawer({ mesaId }) {
     }
   }
 
+  // Advance all pending cocina items to next status
+  const advanceAllCocinaItems = async () => {
+    const mesaCocinaItems = cocina.filter(c => c.mesaId === mesaId && c.status !== 'listo' && c.status !== 'cancelado')
+    if (mesaCocinaItems.length === 0) {
+      return // No pending items
+    }
+    // Advance each item to next status
+    for (const item of mesaCocinaItems) {
+      await advanceCocinaStatus(item.id)
+    }
+  }
+
   const handleEditMenuConfirm = async (primero, segundo, postre, bebida) => {
     if (!editingMenuItem) return
     try {
@@ -204,6 +216,23 @@ export default function MesaDrawer({ mesaId }) {
                 aria-label="Cerrar"
               >
                 ✕
+              </button>
+            </div>
+            {/* Kitchen control buttons */}
+            <div className="flex gap-2 mt-2 px-1">
+              <button
+                className="btn btn-sm btn-outline flex-1 min-h-[40px]"
+                onClick={() => startPreparingMesa(mesaId)}
+                title="Enviar a cocina"
+              >
+                🍳 Preparar
+              </button>
+              <button
+                className="btn btn-sm btn-outline flex-1 min-h-[40px]"
+                onClick={() => advanceAllCocinaItems()}
+                title="Avanzar estado"
+              >
+                ⏭️ Siguiente
               </button>
             </div>
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { CATEGORIA_LABELS } from '../../utils/constants'
 import { formatPrice } from '../../utils/formatters'
 
@@ -16,18 +16,33 @@ export default function EditMenuItemModal({ item, menuDelDia, productos, onConfi
   })
 
   // Get available products for each slot
-  const primeroIds = menuDelDia.primeroIds || []
-  const segundoIds = menuDelDia.segundoIds || []
-  const postreIds = menuDelDia.postreIds || []
-  const bebidaIds = menuDelDia.bebidaIds || []
-  const incluyeBebida = menuDelDia.incluyeBebida || false
+  // Use menu configured products, but fallback to all products in category
+  const primeroIds = menuDelDia?.primeroIds || []
+  const segundoIds = menuDelDia?.segundoIds || []
+  const postreIds = menuDelDia?.postreIds || []
+  const bebidaIds = menuDelDia?.bebidaIds || []
+  const incluyeBebida = menuDelDia?.incluyeBebida || false
 
-  const primeros = productos.filter(p => primeroIds.includes(p.id) && p.activo)
-  const segundos = productos.filter(p => segundoIds.includes(p.id) && p.activo)
-  const postres = productos.filter(p => postreIds.includes(p.id) && p.activo)
-  const bebidas = bebidaIds.length > 0
+  // Get products - use menu config, but if empty show all in common categories
+  const primeros = useMemo(() => primeroIds.length > 0
+    ? productos.filter(p => primeroIds.includes(p.id) && p.activo)
+    : productos.filter(p => ['entrantes', 'sopas', 'sin_arroz'].includes(p.categoria) && p.activo)
+  , [productos, primeroIds])
+  
+  const segundos = useMemo(() => segundoIds.length > 0
+    ? productos.filter(p => segundoIds.includes(p.id) && p.activo)
+    : productos.filter(p => ['con_arroz', 'pescado', 'arroz_frijoles', 'bolon'].includes(p.categoria) && p.activo)
+  , [productos, segundoIds])
+  
+  const postres = useMemo(() => postreIds.length > 0
+    ? productos.filter(p => postreIds.includes(p.id) && p.activo)
+    : productos.filter(p => p.categoria === 'postres' && p.activo)
+  , [productos, postreIds])
+  
+  const bebidas = useMemo(() => bebidaIds.length > 0
     ? productos.filter(p => bebidaIds.includes(p.id) && p.activo)
     : productos.filter(p => p.categoria === 'bebidas' && p.activo)
+  , [productos, bebidaIds])
 
   // Parse nota string to pre-fill selections
   useEffect(() => {
