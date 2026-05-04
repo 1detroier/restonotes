@@ -38,6 +38,7 @@ export default function MenuPage() {
           primeroIds: menu.primeroIds || [],
           segundoIds: menu.segundoIds || [],
           postreIds: menu.postreIds || [],
+          bebidaIds: menu.bebidaIds || [],
           precio: String(menu.precio),
           incluyeBebida: menu.incluyeBebida || false
         })
@@ -47,6 +48,7 @@ export default function MenuPage() {
           primeroIds: [],
           segundoIds: [],
           postreIds: [],
+          bebidaIds: [],
           precio: '',
           incluyeBebida: false
         })
@@ -72,6 +74,7 @@ export default function MenuPage() {
         primeroIds: values.primeroIds,
         segundoIds: values.segundoIds,
         postreIds: values.postreIds,
+        bebidaIds: values.bebidaIds,
         precio: parseFloat(values.precio),
         incluyeBebida: values.incluyeBebida
       })

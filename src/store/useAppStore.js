@@ -300,6 +300,34 @@ export const useAppStore = create((set, get) => ({
   },
 
   /**
+   * Update a specific item in a mesa's order.
+   * @param {number} mesaId - Mesa ID
+   * @param {string} itemId - PedidoItem id
+   * @param {Object} updates - Fields to update (nota, cantidad, etc.)
+   */
+  updateMesaItem: async (mesaId, itemId, updates) => {
+    try {
+      const { mesas } = get()
+      const mesa = mesas.find((m) => m.id === mesaId)
+      if (!mesa) throw new Error(`Mesa ${mesaId} not found`)
+
+      const pedidos = (mesa.pedidos || []).map((p) => {
+        if (p.id === itemId) {
+          return { ...p, ...updates }
+        }
+        return p
+      })
+      const total = calcTotal(pedidos)
+
+      await mesaRepo.updatePedidos(mesaId, pedidos, total)
+      await get().loadMesas()
+    } catch (error) {
+      console.error('[AppStore] updateMesaItem failed:', error)
+      throw error
+    }
+  },
+
+  /**
    * Close a mesa's account — save venta snapshot then reset to libre state.
    * Wrapped in atomic operation: venta saved BEFORE mesa reset.
    * @param {number} mesaId - Mesa ID
@@ -307,6 +335,12 @@ export const useAppStore = create((set, get) => ({
    */
   closeCuenta: async (mesaId, paymentMethod = 'efectivo') => {
     try {
+      // Check for pending kitchen items before closing
+      const pendingItems = await get().checkCocinaPendiente(mesaId)
+      if (pendingItems) {
+        throw new Error('Hay pedidos pendientes en cocina')
+      }
+
       const { mesas, takeaways } = get()
       const mesa = mesas.find((m) => m.id === mesaId)
       if (!mesa) throw new Error(`Mesa ${mesaId} not found`)
@@ -372,6 +406,25 @@ export const useAppStore = create((set, get) => ({
   },
 
   // ============ Item Cancellation ============
+
+  /**
+   * Check if there are pending (not ready or cancelled) kitchen items for a mesa.
+   * @param {number} mesaId - Mesa ID
+   * @returns {Promise<Object|null>} Pending item if exists, or null
+   */
+  checkCocinaPendiente: async (mesaId) => {
+    try {
+      const targetId = typeof mesaId === 'string' ? Number(mesaId) : mesaId
+      const cocinaItems = await cocinaRepo.getByMesaId(targetId)
+      const pending = cocinaItems.filter(
+        (item) => item.status !== COCINA_STATUS.LISTO && item.status !== COCINA_STATUS.CANCELADO
+      )
+      return pending.length > 0 ? pending : null
+    } catch (error) {
+      console.error('[AppStore] checkCocinaPendiente failed:', error)
+      return null
+    }
+  },
 
   /**
    * Cancel an individual order item (mark as 'cancelado').
@@ -643,6 +696,10 @@ export const useAppStore = create((set, get) => ({
    */
   updateTakeaway: async (id, data) => {
     try {
+      // Check if status is being changed - trigger cocina sync
+      if (data.status) {
+        await get().syncTakeawayToCocina(id)
+      }
       await pedidosLlevarRepo.update(id, data)
       await get().loadTakeaways()
     } catch (error) {
@@ -761,6 +818,38 @@ export const useAppStore = create((set, get) => ({
    */
   setTakeawayActiva: (id) => {
     set({ takeawayActivaId: id })
+  },
+
+  /**
+   * Sync takeaway order status to kitchen (cocina).
+   * Maps: pendiente→pendiente, preparando→preparando, listo→listo
+   * Uses negative mesaId (takeawayId * -1) in cocina.
+   * @param {number} takeawayId - Takeaway order ID
+   */
+  syncTakeawayToCocina: async (takeawayId) => {
+    try {
+      const { takeaways } = get()
+      const order = takeaways.find((t) => t.id === takeawayId)
+      if (!order) return
+
+      const mesaKey = takeawayId * -1
+      const statusMap = {
+        [COCINA_STATUS.PENDIENTE]: COCINA_STATUS.PENDIENTE,
+        [COCINA_STATUS.PREPARANDO]: COCINA_STATUS.PREPARANDO,
+        [COCINA_STATUS.LISTO]: COCINA_STATUS.LISTO
+      }
+
+      const cocinaItems = await cocinaRepo.getByMesaId(mesaKey)
+      for (const item of cocinaItems) {
+        const mappedStatus = statusMap[item.status]
+        if (mappedStatus && mappedStatus !== item.status) {
+          await cocinaRepo.updateStatus(item.id, mappedStatus)
+        }
+      }
+      await get().loadCocina()
+    } catch (error) {
+      console.error('[AppStore] syncTakeawayToCocina failed:', error)
+    }
   },
 
   /**

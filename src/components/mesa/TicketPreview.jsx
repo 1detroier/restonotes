@@ -13,9 +13,10 @@ import { CATEGORIA_LABELS, SWIPE_THRESHOLD } from '../../utils/constants'
  * @param {Function} props.onRemove - Remove handler (tempId) => void
  * @param {Function} props.onUpdateQty - Update quantity handler (tempId, newQty) => void
  * @param {Function} props.onCancel - Cancel item handler (mesaId, itemId) => void
+ * @param {Function} props.onEdit - Edit menu item handler (item) => void
  * @param {number} props.mesaId - Mesa ID for cancellation
  */
-export default function TicketPreview({ pedidos, onRemove, onUpdateQty, onCancel, mesaId }) {
+export default function TicketPreview({ pedidos, onRemove, onUpdateQty, onCancel, onEdit, mesaId }) {
   if (!pedidos || pedidos.length === 0) {
     return (
       <div className="flex items-center justify-center h-32 p-4">
@@ -44,6 +45,7 @@ export default function TicketPreview({ pedidos, onRemove, onUpdateQty, onCancel
                 onRemove={() => onRemove?.(item.id)}
                 onUpdateQty={onUpdateQty}
                 onCancel={() => onCancel?.(mesaId, item.id)}
+                onEdit={onEdit}
                 mesaId={mesaId}
               />
             ))}
@@ -74,7 +76,7 @@ export default function TicketPreview({ pedidos, onRemove, onUpdateQty, onCancel
 /**
  * Individual ticket item with swipe-to-delete, +/- quantity controls, and cancel button.
  */
-function SwipeableItem({ item, onRemove, onUpdateQty, onCancel, mesaId }) {
+function SwipeableItem({ item, onRemove, onUpdateQty, onCancel, onEdit, mesaId }) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const swipe = useSwipe(
     () => setShowDeleteConfirm(true),
@@ -90,6 +92,10 @@ function SwipeableItem({ item, onRemove, onUpdateQty, onCancel, mesaId }) {
 
   const handleCancel = () => {
     onCancel?.(mesaId, item.id)
+  }
+
+  const handleEdit = () => {
+    onEdit?.(item)
   }
 
   return (
@@ -165,6 +171,16 @@ function SwipeableItem({ item, onRemove, onUpdateQty, onCancel, mesaId }) {
           )}
         </div>
         <div className="flex items-center gap-1 shrink-0">
+          {/* Edit button for menu items */}
+          {isMenu && !isCancelled && (
+            <button
+              className="btn btn-xs btn-ghost min-h-[44px] min-w-[44px] p-1"
+              onClick={handleEdit}
+              aria-label={`Editar ${item.nombre}`}
+            >
+              ✏️
+            </button>
+          )}
           {/* Cancel button (hidden for already-cancelled items) */}
           {!isCancelled && (
             <button

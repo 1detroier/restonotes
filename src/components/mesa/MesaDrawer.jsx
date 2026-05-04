@@ -7,6 +7,7 @@ import TicketPreview from './TicketPreview'
 import QuantityModal from './QuantityModal'
 import CerrarCuentaModal from './CerrarCuentaModal'
 import MenuSelectionModal from './MenuSelectionModal'
+import EditMenuItemModal from './EditMenuItemModal'
 import { groupByCategory, calcTotal, getCancelledCount } from '../../utils/orderHelpers'
 import { formatPrice, formatMinutes } from '../../utils/formatters'
 import VariantSelectionModal from '../common/VariantSelectionModal'
@@ -18,7 +19,7 @@ import VariantSelectionModal from '../common/VariantSelectionModal'
  * @param {number} props.mesaId - Active mesa ID
  */
 export default function MesaDrawer({ mesaId }) {
-  const { mesas, productos, menuDelDia, takeaways, addItemToMesa, removeItemFromMesa, updateItemQuantity, closeCuenta, cancelItem, cancelMesaPedido, loadMesas } = useAppStore()
+  const { mesas, productos, menuDelDia, takeaways, addItemToMesa, removeItemFromMesa, updateItemQuantity, updateMesaItem, closeCuenta, cancelItem, cancelMesaPedido, loadMesas } = useAppStore()
   const { closeModal } = useUIStore()
   const [activeTab, setActiveTab] = useState('carta')
   const [qtyProduct, setQtyProduct] = useState(null)
@@ -26,6 +27,7 @@ export default function MesaDrawer({ mesaId }) {
   const [showCloseConfirm, setShowCloseConfirm] = useState(false)
   const [showMenuSelection, setShowMenuSelection] = useState(false)
   const [showCancelOrder, setShowCancelOrder] = useState(false)
+  const [editingMenuItem, setEditingMenuItem] = useState(null)
 
   const mesa = mesas.find((m) => m.id === mesaId)
   const { minutes, colorState } = useMesaTimer(mesa?.openedAt)
@@ -136,6 +138,28 @@ export default function MesaDrawer({ mesaId }) {
     } catch (err) {
       console.error('Failed to add menu:', err)
     }
+  }
+
+  const handleEditMenuItem = (item) => {
+    if (item.categoria === 'menu') {
+      setEditingMenuItem(item)
+    }
+  }
+
+  const handleEditMenuConfirm = async (primero, segundo, postre, bebida) => {
+    if (!editingMenuItem) return
+    try {
+      const components = [primero?.nombre, segundo?.nombre, postre?.nombre, bebida?.nombre].filter(Boolean)
+      const menuNota = components.join(' | ')
+      await updateMesaItem(mesaId, editingMenuItem.id, { nota: menuNota })
+      setEditingMenuItem(null)
+    } catch (err) {
+      console.error('Failed to update menu item:', err)
+    }
+  }
+
+  const handleEditMenuCancel = () => {
+    setEditingMenuItem(null)
   }
 
   const tabs = [
@@ -252,7 +276,7 @@ export default function MesaDrawer({ mesaId }) {
                 <h3 className="text-sm font-semibold px-4 py-2 text-base-content/70 uppercase">
                   Ticket ({pedidos.length} artículo{pedidos.length !== 1 ? 's' : ''}{getCancelledCount(pedidos) > 0 ? `, ${getCancelledCount(pedidos)} cancelado${getCancelledCount(pedidos) !== 1 ? 's' : ''}` : ''})
                 </h3>
-                <TicketPreview pedidos={pedidos} onRemove={handleRemoveItem} onUpdateQty={handleUpdateQty} onCancel={handleCancelItem} mesaId={mesaId} />
+                <TicketPreview pedidos={pedidos} onRemove={handleRemoveItem} onUpdateQty={handleUpdateQty} onCancel={handleCancelItem} onEdit={handleEditMenuItem} mesaId={mesaId} />
               </div>
             )}
 
@@ -365,6 +389,17 @@ export default function MesaDrawer({ mesaId }) {
           takeawayOrders={mesaTakeaways}
           onConfirm={handleCloseCuenta}
           onCancel={() => setShowCloseConfirm(false)}
+        />
+      )}
+
+      {/* Edit menu item modal */}
+      {editingMenuItem && menuDelDia && (
+        <EditMenuItemModal
+          item={editingMenuItem}
+          menuDelDia={menuDelDia}
+          productos={productos}
+          onConfirm={handleEditMenuConfirm}
+          onCancel={handleEditMenuCancel}
         />
       )}
 
