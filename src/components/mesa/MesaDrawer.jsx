@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAppStore } from '../../store/useAppStore'
 import { useUIStore } from '../../store/useUIStore'
 import { useMesaTimer } from '../../hooks/useMesaTimer'
@@ -19,7 +19,7 @@ import VariantSelectionModal from '../common/VariantSelectionModal'
  * @param {number} props.mesaId - Active mesa ID
  */
 export default function MesaDrawer({ mesaId }) {
-  const { mesas, productos, menuDelDia, takeaways, addItemToMesa, removeItemFromMesa, updateItemQuantity, updateMesaItem, closeCuenta, cancelItem, cancelMesaPedido, loadMesas, startPreparingMesa, completeMesaCocina, cocina, advanceCocinaStatus } = useAppStore()
+  const { mesas, productos, menuDelDia, takeaways, addItemToMesa, removeItemFromMesa, updateItemQuantity, updateMesaItem, closeCuenta, cancelItem, cancelMesaPedido, loadMesas, loadCocina, startPreparingMesa, completeMesaCocina, cocina, advanceCocinaStatus, syncCocina, addToast } = useAppStore()
   const { closeModal } = useUIStore()
   const [activeTab, setActiveTab] = useState('carta')
   const [qtyProduct, setQtyProduct] = useState(null)
@@ -120,6 +120,15 @@ export default function MesaDrawer({ mesaId }) {
     }
   }
 
+  // Sync cocina when drawer opens to get latest status from cocina page
+  useEffect(() => {
+    const syncAndLoad = async () => {
+      await syncCocina()
+      await loadCocina()
+    }
+    syncAndLoad()
+  }, [mesaId])
+
   const handleMenuConfirm = async (primero, segundo, postre, bebida) => {
     try {
       const menuPrice = menuDelDia?.precio || 0
@@ -147,14 +156,34 @@ export default function MesaDrawer({ mesaId }) {
   }
 
   // Advance all pending cocina items to next status
+  const [isAdvancing, setIsAdvancing] = useState(false)
+
   const advanceAllCocinaItems = async () => {
-    const mesaCocinaItems = cocina.filter(c => c.mesaId === mesaId && c.status !== 'listo' && c.status !== 'cancelado')
-    if (mesaCocinaItems.length === 0) {
-      return // No pending items
-    }
-    // Advance each item to next status
-    for (const item of mesaCocinaItems) {
-      await advanceCocinaStatus(item.id)
+    if (isAdvancing) return // Prevent double-click
+    
+    setIsAdvancing(true)
+    try {
+      // Sync cocina first to ensure we have latest state
+      await syncCocina()
+      await loadCocina()
+      
+      const mesaIdNum = typeof mesaId === 'string' ? parseInt(mesaId, 10) : mesaId
+      const mesaCocinaItems = cocina.filter(c => c.mesaId === mesaIdNum && c.status !== 'listo' && c.status !== 'cancelado')
+      if (mesaCocinaItems.length === 0) {
+        setIsAdvancing(false)
+        return // No pending items
+      }
+      // Advance each item to next status
+      for (const item of mesaCocinaItems) {
+        await advanceCocinaStatus(item.id)
+      }
+      // Reload cocina after advancing to update UI
+      await loadCocina()
+    } catch (error) {
+      console.error('Failed to advance cocina items:', error)
+      addToast('Error al avanzar estado', 'error')
+    } finally {
+      setIsAdvancing(false)
     }
   }
 
@@ -221,10 +250,15 @@ export default function MesaDrawer({ mesaId }) {
             {/* Kitchen control - single button */}
             {pedidos.length > 0 && (
               <button
-                className="btn btn-sm btn-primary w-full mt-2 min-h-[40px]"
+                className={`btn btn-sm w-full mt-2 min-h-[40px] ${isAdvancing ? 'btn-disabled loading' : 'btn-primary'}`}
                 onClick={() => advanceAllCocinaItems()}
+                disabled={isAdvancing}
               >
-                🍳 Avanzar Estado
+                {isAdvancing ? (
+                  <span className="loading loading-spinner loading-xs"></span>
+                ) : (
+                  <>🍳 Avanzar Estado</>
+                )}
               </button>
             )}
 

@@ -137,6 +137,7 @@ export default function MenuPage() {
             values={values}
             errors={errors}
             onToggle={toggleProducto}
+            incluyeBebida={values.incluyeBebida}
           />
         </div>
       </div>

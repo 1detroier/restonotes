@@ -41,14 +41,23 @@ describe('MesaDrawer', () => {
   const buildStore = (overrides = {}) => ({
     mesas: [mockMesa],
     productos: mockProductos,
+    categorias: [],
     menuDelDia: null,
     addItemToMesa: vi.fn(),
     removeItemFromMesa: vi.fn(),
     updateItemQuantity: vi.fn(),
+    updateMesaItem: vi.fn(),
     closeCuenta: vi.fn(),
     cancelItem: vi.fn(),
     cancelMesaPedido: mockCancelMesaPedido,
     loadMesas: mockLoadMesas,
+    startPreparingMesa: vi.fn(),
+    completeMesaCocina: vi.fn(),
+    cocina: [],
+    advanceCocinaStatus: vi.fn(),
+    syncCocina: vi.fn().mockResolvedValue(undefined),
+    loadCocina: vi.fn().mockResolvedValue(undefined),
+    addToast: vi.fn(),
     takeaways: [],
     ...overrides
   })

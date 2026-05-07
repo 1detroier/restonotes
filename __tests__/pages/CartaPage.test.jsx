@@ -13,6 +13,17 @@ vi.mock('../../src/store/useUIStore', () => ({
   useUIStore: vi.fn()
 }))
 
+// Mock useCategorias hook
+const mockCategorias = [
+  { id: 1, key: 'entrantes', label: 'Entrantes', tipo: 'carta', orden: 0 },
+  { id: 2, key: 'con_arroz', label: 'Con Arroz', tipo: 'carta', orden: 1 },
+  { id: 3, key: 'bebidas', label: 'Bebidas', tipo: 'carta', orden: 8 }
+]
+
+vi.mock('../../src/hooks/useCategorias', () => ({
+  useCategorias: vi.fn(() => mockCategorias)
+}))
+
 describe('CartaPage Integration', () => {
   const mockAddProducto = vi.fn().mockResolvedValue(undefined)
   const mockUpdateProducto = vi.fn().mockResolvedValue(undefined)
@@ -109,8 +120,8 @@ describe('CartaPage Integration', () => {
       fireEvent.click(toggleBtns[0])
     })
 
-    // After alphabetical sort, Paella (con_arroz) comes first
-    expect(mockToggleProducto).toHaveBeenCalledWith(2)
+    // After grouped by category + alphabetical sort within category, first is Ensalada (id 1)
+    expect(mockToggleProducto).toHaveBeenCalledWith(1)
   })
 
   it('calls deleteProducto when delete button clicked', async () => {
@@ -121,8 +132,8 @@ describe('CartaPage Integration', () => {
       fireEvent.click(deleteBtn)
     })
 
-    // After alphabetical sort, Paella (con_arroz) comes first
-    expect(mockDeleteProducto).toHaveBeenCalledWith(2)
+    // After grouped by category + alphabetical sort within category, first is Ensalada (id 1)
+    expect(mockDeleteProducto).toHaveBeenCalledWith(1)
   })
 
   it('shows empty state when no productos match filters', () => {

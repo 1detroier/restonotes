@@ -1,6 +1,7 @@
 import { useState, useCallback, useMemo } from 'react'
 import { useAppStore } from '../store/useAppStore'
 import { useUIStore } from '../store/useUIStore'
+import { useCategorias, getCategoriaLabel } from '../hooks/useCategorias'
 import ProductoCard from '../components/carta/ProductoCard'
 import ProductoForm from '../components/carta/ProductoForm'
 import FilterChips from '../components/carta/FilterChips'
@@ -10,22 +11,33 @@ import { CATEGORIA_LABELS, TABS } from '../utils/constants'
 import { Settings } from 'lucide-react'
 
 export default function CartaPage() {
-  const { productos, categorias, addProducto, updateProducto, toggleProducto, deleteProducto } = useAppStore()
+  const { productos, addProducto, updateProducto, toggleProducto, deleteProducto } = useAppStore()
   const { addToast, openModal, closeModal, modals, setActiveTab } = useUIStore()
   const [activeCategory, setActiveCategory] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
+
+  // Get categorias dynamically from store (no hardcoded fallback)
+  const categorias = useCategorias()
 
   const handleOpenConfig = () => {
     // Navigate to config tab instead of opening modal
     setActiveTab(TABS.CONFIG)
   }
 
-  // Get category keys from stored categorias or fall back to defaults
-  const categoryKeys = useMemo(() => {
-    if (categorias && categorias.length > 0) {
-      return categorias.map((c) => c.key)
-    }
-    return []
+  // Get category keys directly from store
+  const categoryKeys = useMemo(() => categorias.map((c) => c.key), [categorias])
+
+  // Build category labels map from store
+  const categoryLabelMap = useMemo(() => {
+    const map = {}
+    categorias.forEach((c) => {
+      map[c.key] = c.label
+    })
+    // Fallback to constants for keys that might exist in productos but not in categorias
+    Object.keys(CATEGORIA_LABELS).forEach((k) => {
+      if (!map[k]) map[k] = CATEGORIA_LABELS[k]
+    })
+    return map
   }, [categorias])
 
   // Group products by category with alphabetical sorting within each group
@@ -33,10 +45,8 @@ export default function CartaPage() {
     const activeProductos = productos.filter((p) => p.activo)
     const groups = {}
 
-    // Initialize groups from stored categories or default categories
-    const cats = categoryKeys.length > 0 ? categoryKeys : Object.keys(CATEGORIA_LABELS).filter(
-      (k) => ['con_arroz', 'sin_arroz', 'pescado', 'sopas', 'entrantes', 'arroz_frijoles', 'bolon', 'postres', 'bebidas'].includes(k)
-    )
+    // Initialize groups from stored categories dynamically
+    const cats = categoryKeys
     
     cats.forEach((cat) => {
       groups[cat] = []
@@ -64,10 +74,9 @@ export default function CartaPage() {
     return groups
   }, [productos, categoryKeys, searchQuery])
 
-  // Get categories that have products (or all categories if no filter)
+  // Get categories that have products (or all categories if no search)
   const visibleCategories = useMemo(() => {
-    const defaultCats = ['con_arroz', 'sin_arroz', 'pescado', 'sopas', 'entrantes', 'arroz_frijoles', 'bolon', 'postres', 'bebidas']
-    const cats = categoryKeys.length > 0 ? categoryKeys : defaultCats
+    const cats = categoryKeys
     // Filter to only show categories with products (or all if no search)
     return cats.filter((cat) => {
       const products = groupedProductos[cat] || []
@@ -192,7 +201,7 @@ export default function CartaPage() {
             return (
               <div key={cat}>
                 <h3 className="text-lg font-semibold text-base-content/70 px-2 py-1 sticky top-0 bg-base-200 -mx-4 px-4 pt-2">
-                  {CATEGORIA_LABELS[cat] || cat}
+                  {categoryLabelMap[cat] || cat}
                 </h3>
                 <div className="space-y-2 mt-2">
                   {products.map((p) => (

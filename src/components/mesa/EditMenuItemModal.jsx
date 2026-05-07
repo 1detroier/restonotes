@@ -48,25 +48,42 @@ export default function EditMenuItemModal({ item, menuDelDia, productos, onConfi
   useEffect(() => {
     if (!item?.nota) return
 
-    const parts = item.nota.split(' | ')
+    const parts = item.nota.split(' | ').filter(Boolean)
     const newSelected = { primero: null, segundo: null, postre: null, bebida: null }
 
-    // Try to match each part to a product
-    parts.forEach((part, i) => {
-      const name = part.trim()
-      if (i === 0) {
-        newSelected.primero = primeros.find(p => p.nombre === name) || null
-      } else if (i === 1) {
-        newSelected.segundo = segundos.find(p => p.nombre === name) || null
-      } else if (i === 2) {
-        newSelected.postre = postres.find(p => p.nombre === name) || null
-      } else if (i === 3) {
-        newSelected.bebida = bebidas.find(p => p.nombre === name) || null
-      }
-    })
+    // Helper function to find product by name (case-insensitive partial match)
+    const findProductByName = (name, productList) => {
+      if (!name || !productList) return null
+      const searchName = name.toLowerCase().trim()
+      // Exact match first
+      let match = productList.find(p => p.nombre.toLowerCase() === searchName)
+      if (match) return match
+      // Partial match as fallback
+      match = productList.find(p => p.nombre.toLowerCase().includes(searchName))
+      return match || null
+    }
+
+    // Count parts to determine if bebida is included
+    const hasBebida = parts.length === 4 && incluyeBebida
+
+    // Map parts to slots based on whether bebida is included
+    if (parts.length >= 1) {
+      newSelected.primero = findProductByName(parts[0], primeros)
+    }
+    if (parts.length >= 2) {
+      newSelected.segundo = findProductByName(parts[1], segundos)
+    }
+    if (parts.length >= 3) {
+      // If we have 3 parts and bebida is included, it's primero/segundo/postre
+      // If we have 3 parts and bebida is NOT included, it's primero/segundo/postre (bebida not in nota)
+      newSelected.postre = findProductByName(parts[2], postres)
+    }
+    if (parts.length >= 4 && hasBebida) {
+      newSelected.bebida = findProductByName(parts[3], bebidas)
+    }
 
     setSelected(newSelected)
-  }, [item, primeros, segundos, postres, bebidas])
+  }, [item, primeros, segundos, postres, bebidas, incluyeBebida])
 
   const handleSelect = (slot, producto) => {
     setSelected(prev => ({

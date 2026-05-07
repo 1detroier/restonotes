@@ -20,14 +20,15 @@ export default function ProductMultiSelect({
   productos,
   values,
   errors,
-  onToggle
+  onToggle,
+  incluyeBebida = false
 }) {
   // Menu slots with their relevant categories
   const menuSlots = [
     { key: 'primeroIds', label: 'Primeros' },
     { key: 'segundoIds', label: 'Segundos' },
     { key: 'postreIds', label: 'Postres' },
-    { key: 'bebidaIds', label: 'Bebidas' }
+    ...(incluyeBebida ? [{ key: 'bebidaIds', label: 'Bebidas' }] : [])
   ]
 
   return (

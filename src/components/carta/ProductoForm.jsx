@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useProductoForm } from '../../hooks/useProductoForm'
-import { useAppStore } from '../../store/useAppStore'
+import { useCategorias } from '../../hooks/useCategorias'
 import { CATEGORIA_LABELS } from '../../utils/constants'
 import EmojiPicker from './EmojiPicker'
 import { normalizeVariantGroups, createVariantOptionId } from '../../utils/variants'
@@ -12,7 +12,7 @@ const buildInitialVariants = (producto) => {
 
 export default function ProductoForm({ producto, onSave, onCancel }) {
   const isEdit = !!producto
-  const { categorias } = useAppStore()
+  const categorias = useCategorias()
   const { values, errors, isValid, setField, reset, validate } = useProductoForm(
     isEdit
       ? {
@@ -166,25 +166,17 @@ export default function ProductoForm({ producto, onSave, onCancel }) {
           }`}
         >
           <option value="">Seleccionar...</option>
-          {categorias && categorias.length > 0 ? (
+          {categorias.length > 0 ? (
             categorias.map((cat) => (
               <option key={cat.key} value={cat.key}>
                 {cat.label}
               </option>
             ))
           ) : (
-            // Fallback to constants if no categorias in store
-            <>
-              <option value="con_arroz">Con Arroz</option>
-              <option value="sin_arroz">Sin Arroz</option>
-              <option value="pescado">Pescado</option>
-              <option value="sopas">Sopas / Caldos</option>
-              <option value="entrantes">Entrantes</option>
-              <option value="arroz_frijoles">Arroz con Frijoles</option>
-              <option value="bolon">Bolón</option>
-              <option value="postres">Postres</option>
-              <option value="bebidas">Bebidas</option>
-            </>
+            // No hardcoded fallback - show message if empty
+            <option value="" disabled>
+              No hay categorías disponibles
+            </option>
           )}
         </select>
         {errors.categoria && (
