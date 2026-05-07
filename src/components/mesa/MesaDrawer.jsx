@@ -247,19 +247,48 @@ export default function MesaDrawer({ mesaId }) {
                 ✕
               </button>
             </div>
-            {/* Kitchen control - single button */}
+            {/* Kitchen control - button + status indicator */}
             {pedidos.length > 0 && (
-              <button
-                className={`btn btn-sm w-full mt-2 min-h-[40px] ${isAdvancing ? 'btn-disabled loading' : 'btn-primary'}`}
-                onClick={() => advanceAllCocinaItems()}
-                disabled={isAdvancing}
-              >
-                {isAdvancing ? (
-                  <span className="loading loading-spinner loading-xs"></span>
-                ) : (
-                  <>🍳 Avanzar Estado</>
-                )}
-              </button>
+              <div className="flex items-center gap-2 mt-2">
+                <button
+                  className={`btn btn-sm flex-1 min-h-[40px] ${isAdvancing ? 'btn-disabled loading' : 'btn-primary'}`}
+                  onClick={() => advanceAllCocinaItems()}
+                  disabled={isAdvancing}
+                >
+                  {isAdvancing ? (
+                    <span className="loading loading-spinner loading-xs"></span>
+                  ) : (
+                    <>🍳 Avanzar</>
+                  )}
+                </button>
+                {/* Status indicator */}
+                {(() => {
+                  const mesaIdNum = typeof mesaId === 'string' ? parseInt(mesaId, 10) : mesaId
+                  const mesaCocinaItems = cocina.filter(c => c.mesaId === mesaIdNum && c.status !== 'cancelado')
+                  const pending = mesaCocinaItems.filter(c => c.status === 'pendiente').length
+                  const preparing = mesaCocinaItems.filter(c => c.status === 'preparando').length
+                  const ready = mesaCocinaItems.filter(c => c.status === 'listo').length
+                  
+                  if (mesaCocinaItems.length === 0) return null
+                  
+                  let statusColor = 'badge-warning'
+                  let statusText = `${pending} pend`
+                  if (preparing > 0) {
+                    statusColor = 'badge-warning'
+                    statusText = `${preparing} prep`
+                  }
+                  if (ready > 0 && pending === 0 && preparing === 0) {
+                    statusColor = 'badge-success'
+                    statusText = 'Listo'
+                  }
+                  
+                  return (
+                    <span className={`badge badge-sm ${statusColor}`}>
+                      {statusText}
+                    </span>
+                  )
+                })()}
+              </div>
             )}
 
             {/* Tabs */}
