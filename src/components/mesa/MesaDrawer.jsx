@@ -43,13 +43,27 @@ export default function MesaDrawer({ mesaId }) {
 
   // Get categories from store dynamically
   const categorias = useCategorias()
-  const categoriasKeys = categorias.map(c => c.key)
-  const hasBebidasCategory = categoriasKeys.includes('bebidas')
+  
+  // Fallback: derive categories from products if store is empty
+  const categoriasFromProducts = productos 
+    ? [...new Set(productos.filter(p => p.activo).map(p => p.categoria))]
+    : []
+  
+  // Merge store categories with product-derived categories
+  const allCategoriasKeys = [...new Set([
+    ...categorias.map(c => c.key),
+    ...categoriasFromProducts
+  ])]
+  
+  const hasBebidasCategory = allCategoriasKeys.includes('bebidas')
 
   // Get beverage-related category keys (for dynamic filtering)
-  const beverageCategories = categorias
+  const storeBeverageKeys = categorias
     .filter(c => c.label.toLowerCase().includes('bebida') || c.key === 'bebidas')
     .map(c => c.key)
+  
+  // Include 'bebidas' key as fallback
+  const beverageCategories = [...new Set([...storeBeverageKeys, 'bebidas'])]
 
   // Filter products by active tab - using dynamic categories
   const filteredProductos = productos.filter((p) => {
@@ -375,7 +389,7 @@ export default function MesaDrawer({ mesaId }) {
               <ProductQuickAdd
                 productos={filteredProductos}
                 onAdd={handleProductTap}
-                categorias={categorias}
+                categorias={[...categorias, ...categoriasFromProducts.map(key => ({ key, label: key, tipo: 'carta' }))]}
                 onLongPressProduct={(producto) => {
                   if (requiresVariants(producto)) {
                     setVariantProduct({ producto, quantity: 1 })
