@@ -274,7 +274,7 @@ export default function MesaDrawer({ mesaId }) {
                   const preparing = mesaCocinaItems.filter(c => c.status === 'preparando').length
                   const ready = mesaCocinaItems.filter(c => c.status === 'listo').length
 
-                  // Only show "Listo" when ALL items are ready
+                  // Priority: pending > preparing > ready (only show if actively in progress)
                   let statusColor = 'badge-warning'
                   let statusText = ''
                   
@@ -284,13 +284,13 @@ export default function MesaDrawer({ mesaId }) {
                   } else if (preparing > 0) {
                     statusText = `${preparing} prep`
                     statusColor = 'badge-warning'
-                  } else if (ready > 0 && ready === totalItems) {
+                  } else if (ready > 0) {
+                    // Only show "Listo" if there are ready items AND there were previously pending/preparing
+                    // Don't show at initial load - only after user has interacted
                     statusText = 'Listo'
                     statusColor = 'badge-success'
                   } else {
-                    // Some ready but not all
-                    statusText = `${ready}/${totalItems}`
-                    statusColor = 'badge-info'
+                    return null // No active items
                   }
                   
                   return (

@@ -378,6 +378,9 @@ export const useAppStore = create((set, get) => ({
       }
       await ventaRepo.create(venta)
 
+      // Cancel cocina items for this mesa (only non-ready items)
+      await get().cancelMesaCocina(mesaId)
+
       if (linkedTakeaways.length > 0) {
         for (const order of linkedTakeaways) {
           await pedidosLlevarRepo.delete(order.id)
@@ -397,6 +400,8 @@ export const useAppStore = create((set, get) => ({
 
   cancelMesaPedido: async (mesaId) => {
     try {
+      // Cancel cocina items for this mesa first
+      await get().cancelMesaCocina(mesaId)
       await mesaRepo.closeCuenta(mesaId)
       await get().loadMesas()
     } catch (error) {
