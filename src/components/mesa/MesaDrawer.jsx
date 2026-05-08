@@ -265,21 +265,32 @@ export default function MesaDrawer({ mesaId }) {
                 {(() => {
                   const mesaIdNum = typeof mesaId === 'string' ? parseInt(mesaId, 10) : mesaId
                   const mesaCocinaItems = cocina.filter(c => c.mesaId === mesaIdNum && c.status !== 'cancelado')
+                  const totalItems = mesaCocinaItems.length
+                  
+                  // If no items in cocina, return null (don't show indicator)
+                  if (totalItems === 0) return null
+                  
                   const pending = mesaCocinaItems.filter(c => c.status === 'pendiente').length
                   const preparing = mesaCocinaItems.filter(c => c.status === 'preparando').length
                   const ready = mesaCocinaItems.filter(c => c.status === 'listo').length
-                  
-                  if (mesaCocinaItems.length === 0) return null
-                  
+
+                  // Only show "Listo" when ALL items are ready
                   let statusColor = 'badge-warning'
-                  let statusText = `${pending} pend`
-                  if (preparing > 0) {
+                  let statusText = ''
+                  
+                  if (pending > 0) {
+                    statusText = `${pending} pend`
                     statusColor = 'badge-warning'
+                  } else if (preparing > 0) {
                     statusText = `${preparing} prep`
-                  }
-                  if (ready > 0 && pending === 0 && preparing === 0) {
-                    statusColor = 'badge-success'
+                    statusColor = 'badge-warning'
+                  } else if (ready > 0 && ready === totalItems) {
                     statusText = 'Listo'
+                    statusColor = 'badge-success'
+                  } else {
+                    // Some ready but not all
+                    statusText = `${ready}/${totalItems}`
+                    statusColor = 'badge-info'
                   }
                   
                   return (
