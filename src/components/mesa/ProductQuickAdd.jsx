@@ -11,6 +11,9 @@ import { CATEGORIA_LABELS, CATEGORIAS_CARTA } from '../../utils/constants'
  * @param {Array} props.categorias - Optional: dynamic categories from store
  */
 export default function ProductQuickAdd({ productos, onAdd, onLongPressProduct, grouped = true, categorias = [] }) {
+  console.log('[DEBUG] ProductQuickAdd - received productos:', productos?.length || 0)
+  console.log('[DEBUG] ProductQuickAdd - received categorias:', categorias.length, categorias.map(c => c.key))
+  
   if (!productos || productos.length === 0) {
     return (
       <div className="flex items-center justify-center h-32">
@@ -38,8 +41,13 @@ export default function ProductQuickAdd({ productos, onAdd, onLongPressProduct, 
     groupedProducts[cat].push(p)
   })
 
+  console.log('[DEBUG] ProductQuickAdd - groupedProducts keys:', Object.keys(groupedProducts))
+  console.log('[DEBUG] ProductQuickAdd - items per category:', Object.entries(groupedProducts).map(([k,v]) => `${k}: ${v.length}`).join(', '))
+
   // If only one category or grouped=false, render flat
   const categories = Object.keys(groupedProducts)
+  console.log('[DEBUG] ProductQuickAdd - categories to render:', categories)
+  
   if (!grouped || categories.length <= 1) {
     return (
       <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 p-2">
