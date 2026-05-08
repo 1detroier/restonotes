@@ -26,12 +26,15 @@ export default function ProductQuickAdd({ productos, onAdd, onLongPressProduct, 
   const categoryLabelMap = {}
   // Add store categories first (custom labels)
   categorias.forEach(c => {
+    console.log('[DEBUG] ProductQuickAdd - mapping category:', c.key, '->', c.label)
     categoryLabelMap[c.key] = c.label
   })
   // Fallback to constants for any missing keys
   Object.keys(CATEGORIA_LABELS).forEach(k => {
     if (!categoryLabelMap[k]) categoryLabelMap[k] = CATEGORIA_LABELS[k]
   })
+  
+  console.log('[DEBUG] ProductQuickAdd - categoryLabelMap for prueba:', categoryLabelMap['prueba'])
 
   // Group products by category
   const groupedProducts = {}
