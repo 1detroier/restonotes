@@ -375,6 +375,7 @@ export default function MesaDrawer({ mesaId }) {
               <ProductQuickAdd
                 productos={filteredProductos}
                 onAdd={handleProductTap}
+                categorias={categorias}
                 onLongPressProduct={(producto) => {
                   if (requiresVariants(producto)) {
                     setVariantProduct({ producto, quantity: 1 })

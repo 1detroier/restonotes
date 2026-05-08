@@ -1,5 +1,5 @@
 import { useLongPress } from '../../hooks/useLongPress'
-import { CATEGORIAS_CARTA, CATEGORIA_LABELS } from '../../utils/constants'
+import { CATEGORIA_LABELS, CATEGORIAS_CARTA } from '../../utils/constants'
 
 /**
  * Tappable product cards grid grouped by category with sticky headers.
@@ -8,8 +8,9 @@ import { CATEGORIAS_CARTA, CATEGORIA_LABELS } from '../../utils/constants'
  * @param {Function} props.onAdd - Add handler (producto, cantidad) => void
  * @param {Function} props.onLongPressProduct - Long press handler for quantity modal
  * @param {boolean} props.grouped - If true, group by category (default: true)
+ * @param {Array} props.categorias - Optional: dynamic categories from store
  */
-export default function ProductQuickAdd({ productos, onAdd, onLongPressProduct, grouped = true }) {
+export default function ProductQuickAdd({ productos, onAdd, onLongPressProduct, grouped = true, categorias = [] }) {
   if (!productos || productos.length === 0) {
     return (
       <div className="flex items-center justify-center h-32">
@@ -17,6 +18,17 @@ export default function ProductQuickAdd({ productos, onAdd, onLongPressProduct, 
       </div>
     )
   }
+
+  // Build category label map from store categories + fallback to constants
+  const categoryLabelMap = {}
+  // Add store categories first (custom labels)
+  categorias.forEach(c => {
+    categoryLabelMap[c.key] = c.label
+  })
+  // Fallback to constants for any missing keys
+  Object.keys(CATEGORIA_LABELS).forEach(k => {
+    if (!categoryLabelMap[k]) categoryLabelMap[k] = CATEGORIA_LABELS[k]
+  })
 
   // Group products by category
   const groupedProducts = {}
@@ -43,17 +55,24 @@ export default function ProductQuickAdd({ productos, onAdd, onLongPressProduct, 
     )
   }
 
+  // Get all category keys to iterate (store categories + default ones that have products)
+  const allCategories = [...new Set([
+    ...categorias.map(c => c.key),
+    ...CATEGORIAS_CARTA,
+    ...categories
+  ])]
+
   // Render grouped by category with sticky headers
   return (
     <div className="p-2 space-y-3">
-      {CATEGORIAS_CARTA.map((cat) => {
+      {allCategories.map((cat) => {
         const items = groupedProducts[cat]
         if (!items || items.length === 0) return null
 
         return (
           <div key={cat}>
             <h4 className="text-sm font-semibold text-base-content/70 uppercase tracking-wide mb-1 px-1 sticky top-0 bg-base-100 z-10 py-1">
-              {CATEGORIA_LABELS[cat] || cat}
+              {categoryLabelMap[cat] || cat}
             </h4>
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
               {items.map((prod) => (
