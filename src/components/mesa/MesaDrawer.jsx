@@ -44,16 +44,10 @@ export default function MesaDrawer({ mesaId }) {
   // Get categories from store dynamically
   const categorias = useCategorias()
   
-  // DEBUG: Log categorias from store
-  console.log('[DEBUG] MesaDrawer - categorias from store:', categorias.length, categorias.map(c => c.key))
-  
   // Fallback: derive categories from products if store is empty
   const categoriasFromProducts = productos 
     ? [...new Set(productos.filter(p => p.activo).map(p => p.categoria))]
     : []
-  
-  // DEBUG: Log derived categories
-  console.log('[DEBUG] MesaDrawer - categorias from products:', categoriasFromProducts)
   
   // Merge store categories with product-derived categories
   const allCategoriasKeys = [...new Set([
@@ -71,24 +65,17 @@ export default function MesaDrawer({ mesaId }) {
   // Include 'bebidas' key as fallback
   const beverageCategories = [...new Set([...storeBeverageKeys, 'bebidas'])]
 
-  // DEBUG: Log beverage categories filter
-  console.log('[DEBUG] MesaDrawer - beverageCategories:', beverageCategories)
-
   // Filter products by active tab - using dynamic categories
   const filteredProductos = productos.filter((p) => {
     if (!p.activo) return false
     if (activeTab === 'carta') {
-      const result = !beverageCategories.includes(p.categoria)
-      console.log('[DEBUG] MesaDrawer - product:', p.nombre, 'categoria:', p.categoria, 'includeInCarta:', result)
-      return result
+      return !beverageCategories.includes(p.categoria)
     }
     if (activeTab === 'bebidas') {
       return beverageCategories.includes(p.categoria)
     }
     return true
   })
-  
-  console.log('[DEBUG] MesaDrawer - total products:', productos.length, 'filtered:', filteredProductos.length)
 
   const requiresVariants = (producto) =>
     producto?.hasVariants && Array.isArray(producto.variantGroups) && producto.variantGroups.length > 0
@@ -400,7 +387,7 @@ export default function MesaDrawer({ mesaId }) {
               <ProductQuickAdd
                 productos={filteredProductos}
                 onAdd={handleProductTap}
-                categorias={[...categorias, ...categoriasFromProducts.map(key => ({ key, label: key, tipo: 'carta' }))]}
+                categorias={[...categorias, ...categoriasFromProducts.filter(key => !categorias.find(c => c.key === key)).map(key => ({ key, label: key, tipo: 'carta' }))]}
                 onLongPressProduct={(producto) => {
                   if (requiresVariants(producto)) {
                     setVariantProduct({ producto, quantity: 1 })
