@@ -71,6 +71,9 @@ export default function MesaDrawer({ mesaId }) {
   const handleAddProductDirect = async (producto, cantidad = 1, nota = '', variantOptions = []) => {
     try {
       await addItemToMesa(mesaId, producto, cantidad, 'carta', nota, variantOptions)
+      // Sync cocina after adding item to ensure it's in the kitchen queue
+      await syncCocina()
+      await loadCocina()
     } catch (err) {
       console.error('Failed to add item:', err)
     }
@@ -156,6 +159,9 @@ export default function MesaDrawer({ mesaId }) {
         categoria: 'menu',
         emoji: '🍱'
       }, 1, 'menu', menuNota)
+      // Sync cocina after adding menu
+      await syncCocina()
+      await loadCocina()
       setShowMenuSelection(false)
     } catch (err) {
       console.error('Failed to add menu:', err)
