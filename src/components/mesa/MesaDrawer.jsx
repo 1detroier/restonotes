@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useAppStore } from '../../store/useAppStore'
 import { useUIStore } from '../../store/useUIStore'
 import { useMesaTimer } from '../../hooks/useMesaTimer'
+import { useCategorias } from '../../hooks/useCategorias'
 import ProductQuickAdd from './ProductQuickAdd'
 import TicketPreview from './TicketPreview'
 import QuantityModal from './QuantityModal'
@@ -40,14 +41,26 @@ export default function MesaDrawer({ mesaId }) {
   const takeawaySubtotal = mesaTakeaways.reduce((sum, order) => sum + (order.total || 0), 0)
   const combinedTotal = mesaSubtotal + takeawaySubtotal
 
-  // Filter products by active tab
+  // Get categories from store dynamically
+  const categorias = useCategorias()
+  const categoriasKeys = categorias.map(c => c.key)
+  const hasBebidasCategory = categoriasKeys.includes('bebidas')
+
+  // Get beverage-related category keys (for dynamic filtering)
+  const beverageCategories = categorias
+    .filter(c => c.label.toLowerCase().includes('bebida') || c.key === 'bebidas')
+    .map(c => c.key)
+
+  // Filter products by active tab - using dynamic categories
   const filteredProductos = productos.filter((p) => {
     if (!p.activo) return false
     if (activeTab === 'carta') {
-      return p.categoria !== 'bebidas'
+      // Show everything except beverage categories
+      return !beverageCategories.includes(p.categoria)
     }
     if (activeTab === 'bebidas') {
-      return p.categoria === 'bebidas'
+      // Show only beverage categories
+      return beverageCategories.includes(p.categoria)
     }
     return true
   })
@@ -203,11 +216,12 @@ export default function MesaDrawer({ mesaId }) {
     setEditingMenuItem(null)
   }
 
-  const tabs = [
+  const defaultTabs = [
     { id: 'carta', label: 'Carta' },
-    { id: 'menu', label: 'Menú Hoy' },
-    { id: 'bebidas', label: 'Bebidas' }
+    { id: 'menu', label: 'Menú Hoy' }
   ]
+  const bebidasTab = hasBebidasCategory ? [{ id: 'bebidas', label: 'Bebidas' }] : []
+  const tabs = [...defaultTabs, ...bebidasTab]
 
   return (
     <>

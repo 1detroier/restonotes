@@ -8,13 +8,22 @@ vi.mock('../../../src/store/useAppStore', () => ({
   useAppStore: vi.fn()
 }))
 
-const mockCloseModal = vi.fn()
-
 vi.mock('../../../src/store/useUIStore', () => ({
   useUIStore: vi.fn(() => ({
     closeModal: mockCloseModal
   }))
 }))
+
+// Mock useCategorias hook
+vi.mock('../../../src/hooks/useCategorias', () => ({
+  useCategorias: vi.fn(() => [
+    { id: 1, key: 'entrantes', label: 'Entrantes', tipo: 'carta', orden: 0 },
+    { id: 2, key: 'con_arroz', label: 'Con Arroz', tipo: 'carta', orden: 1 },
+    { id: 3, key: 'bebidas', label: 'Bebidas', tipo: 'carta', orden: 8 }
+  ])
+}))
+
+const mockCloseModal = vi.fn()
 
 const mockCancelMesaPedido = vi.fn()
 
@@ -73,7 +82,7 @@ describe('MesaDrawer', () => {
     expect(screen.getByText('Mesa #5')).toBeInTheDocument()
   })
 
-  it('renders three tabs', () => {
+  it('renders three tabs when bebidas category exists', () => {
     render(<MesaDrawer mesaId={1} />)
     expect(screen.getByText('Carta')).toBeInTheDocument()
     expect(screen.getByText('Menú Hoy')).toBeInTheDocument()
