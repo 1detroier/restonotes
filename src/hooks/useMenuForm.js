@@ -61,8 +61,8 @@ export function useMenuForm(initialValues) {
     })
   }, [])
 
-  const reset = useCallback(() => {
-    setValues({ ...defaultValues })
+  const reset = useCallback((values) => {
+    setValues({ ...defaultValues, ...values })
     setErrors({})
   }, [])
 
